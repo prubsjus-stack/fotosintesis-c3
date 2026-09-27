@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plantas C₃ · Fotosíntesis y fijación del carbono</title>
+<meta name="description" content="Qué son las plantas C₃, cómo funciona su fotosíntesis y por qué se llaman así: el primer producto estable de la fijación del CO₂ tiene tres átomos de carbono. Infografía animada.">
+<meta name="color-scheme" content="dark">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --mono:ui-monospace,'Cascadia Mono','JetBrains Mono',Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+
+  --bg:#04080a;
+  --ink:#eef7f2;
+  --mut:#8ea3ad;
+  --dim:#5d7180;
+  --line:rgba(255,255,255,.10);
+
+  /* paleta científica: clorofila, cian de la luz, sol, y el rojo del O2 */
+  --g:#4dff9f;
+  --c:#4ad9ff;
+  --s:#ffc44d;
+  --o:#ff5f8f;
+  --v:#a97bff;
+
+  --ac:var(--g);
+  --pad:clamp(20px,5vw,60px);
+  --maxw:1240px;
+  --vh:100vh;
+  --vh:100svh;
+}
+@supports(height:100dvh){ :root{ --vh:100dvh } }
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.5;
+  overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+h1,h2,h3,p,figure,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+canvas{display:block}
+::selection{background:rgba(77,255,159,.30);color:#fff}
+:focus-visible{outline:2px solid var(--g);outline-offset:4px;border-radius:6px}
+
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.skip{position:fixed;left:14px;top:-100px;z-index:300;padding:12px 20px;border-radius:10px;
+  background:var(--g);color:#04080a;font:800 11px/1 var(--mono);letter-spacing:.16em;
+  text-transform:uppercase;text-decoration:none;transition:top .25s}
+.skip:focus{top:14px}
+
+/* ═══════════════════════════════════════════════════════════════
+   FONDO VIVO: dos capas de canvas fijas, una sola escena
+   ═══════════════════════════════════════════════════════════════ */
+#bg{position:fixed;inset:0;z-index:0;width:100%;height:100%}
+#veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,transparent 30%,rgba(4,8,10,.72) 78%,rgba(4,8,10,.95) 100%)}
+#grain{position:fixed;inset:-50%;z-index:2;pointer-events:none;opacity:.028;
+  background:repeating-conic-gradient(#fff 0 25%,#000 0 50%) 0 0/3px 3px;
+  animation:grain 1.2s steps(3) infinite}
+@keyframes grain{
+  0%{transform:translate(0,0)}33%{transform:translate(-1px,1px)}
+  66%{transform:translate(1px,-1px)}100%{transform:translate(0,0)}}
+#halo{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:radial-gradient(460px circle at var(--mx,50%) var(--my,50%),rgba(77,255,159,.11),transparent 62%);
+  mix-blend-mode:screen;transition:opacity .5s}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHROMA: barra superior + índice lateral
+   ═══════════════════════════════════════════════════════════════ */
+#bar{position:fixed;top:0;left:0;height:2px;z-index:120;width:0;
+  background:linear-gradient(90deg,var(--g),var(--c));box-shadow:0 0 14px rgba(77,255,159,.6)}
+
+#top{position:fixed;top:0;left:0;right:0;z-index:110;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:16px var(--pad);pointer-events:none;
+  mix-blend-mode:difference}
+#top>*{pointer-events:auto}
+#top .mark{display:flex;align-items:center;gap:9px;font:800 11px/1 var(--mono);
+  letter-spacing:.2em;text-transform:uppercase;color:#fff}
+#top .mark i{width:9px;height:9px;border-radius:50%;background:var(--g);
+  box-shadow:0 0 12px var(--g);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+
+#idx{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:110;
+  display:grid;gap:4px}
+#idx button{position:relative;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;transition:.3s}
+#idx button::after{content:attr(data-t);position:absolute;right:32px;
+  font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  white-space:nowrap;color:var(--mut);background:rgba(4,8,10,.85);
+  padding:6px 9px;border-radius:6px;border:1px solid var(--line);
+  opacity:0;transform:translateX(6px);transition:.3s;pointer-events:none}
+#idx button:hover::after,#idx button:focus-visible::after{opacity:1;transform:none}
+#idx button i{width:7px;height:7px;border-radius:50%;background:var(--dim);transition:.3s}
+#idx button:hover i{background:var(--ink);transform:scale(1.3)}
+#idx button.on i{background:var(--ac);box-shadow:0 0 10px var(--ac);
+  width:8px;height:8px;transform:scale(1.25)}
+@media(max-width:820px){#idx{display:none}}
+
+/* ═══════════════════════════════════════════════════════════════
+   PIEZAS REUTILIZABLES
+   ═══════════════════════════════════════════════════════════════ */
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+section{position:relative;z-index:5}
+
+.eyebrow{display:inline-flex;align-items:center;gap:10px;
+  font:800 10px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;
+  color:var(--ac);margin-bottom:22px}
+.eyebrow::before{content:'';width:26px;height:1px;background:currentColor;opacity:.6}
+
+h1{font-size:clamp(38px,8.4vw,104px);font-weight:800;line-height:.94;
+  letter-spacing:-.035em}
+h2{font-size:clamp(27px,4.4vw,54px);font-weight:800;line-height:1.02;
+  letter-spacing:-.028em}
+h3{font-size:clamp(17px,2vw,23px);font-weight:750;line-height:1.18;
+  letter-spacing:-.012em}
+.lead{font-size:clamp(15px,1.35vw,18.5px);line-height:1.62;color:var(--mut);
+  max-width:56ch;margin-top:20px}
+.lead b{color:var(--ink);font-weight:650}
+.grad{background:linear-gradient(100deg,var(--g),var(--c) 55%,var(--v));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hint{font:700 10.5px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;
+  color:var(--dim)}
+
+/* cifras gigantes: el 90% del peso visual va aquí */
+.big{font:800 clamp(58px,11vw,148px)/.84 var(--sans);letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums}
+.unit{font:800 .22em/1 var(--mono);letter-spacing:.06em;color:var(--ac);
+  vertical-align:super;margin-left:.1em}
+
+.card{position:relative;padding:clamp(18px,2.2vw,28px);border-radius:18px;
+  border:1px solid var(--line);background:rgba(255,255,255,.026);
+  overflow:hidden;transition:border-color .4s,transform .4s,background .4s}
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .4s;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),
+    rgba(77,255,159,.10),transparent 60%)}
+.card:hover::before{opacity:1}
+.card:hover{border-color:rgba(77,255,159,.35);transform:translateY(-4px)}
+.card>*{position:relative}
+
+/* ═══════════════════════════════════════════════════════════════
+   PORTADA
+   ═══════════════════════════════════════════════════════════════ */
+#s0{min-height:var(--vh);display:grid;place-items:center;
+  padding:calc(var(--vh)*.14) 0 calc(var(--vh)*.1);text-align:center;overflow:hidden}
+#cv0{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#s0 .wrap{position:relative;z-index:2}
+#s0 h1{max-width:16ch;margin-inline:auto}
+#s0 h1 small{display:block;font-size:.3em;font-weight:700;letter-spacing:.02em;
+  color:var(--mut);margin-bottom:.5em;line-height:1.25}
+.c3{display:inline-grid;place-items:center;margin-top:34px;
+  width:clamp(104px,13vw,150px);aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(77,255,159,.4);
+  background:radial-gradient(circle at 50% 30%,rgba(77,255,159,.22),transparent 70%);
+  box-shadow:0 0 70px rgba(77,255,159,.20),inset 0 0 40px rgba(77,255,159,.10);
+  animation:breathe 5.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.c3 b{font:800 clamp(44px,6vw,68px)/1 var(--sans);letter-spacing:-.05em;
+  background:linear-gradient(180deg,#fff,var(--g));-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.c3 i{display:block;font:800 10px/1 var(--mono);letter-spacing:.34em;
+  text-transform:uppercase;color:var(--g);font-style:normal;margin-top:6px}
+.scrollcue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  z-index:3;display:grid;justify-items:center;gap:9px;transition:opacity .5s}
+.scrollcue i{width:1px;height:44px;background:linear-gradient(180deg,transparent,var(--g));
+  animation:cue 1.9s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:scaleY(.35);opacity:.3;transform-origin:top}
+  50%{transform:scaleY(1);opacity:1;transform-origin:top}}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   S1 · ¿QUÉ ES UNA PLANTA C₃?
+   ═══════════════════════════════════════════════════════════════ */
+#s1{padding:clamp(84px,13vh,160px) 0}
+#s1 .split{display:grid;grid-template-columns:1.05fr .95fr;
+  gap:clamp(26px,4vw,60px);align-items:center}
+@media(max-width:900px){#s1 .split{grid-template-columns:1fr;gap:34px}}
+#cv1{width:100%;height:clamp(300px,48vh,470px);border-radius:22px;
+  border:1px solid var(--line);background:rgba(255,255,255,.018)}
+
+.defline{font-size:clamp(17px,2vw,26px);line-height:1.42;color:var(--mut);
+  max-width:34ch;margin-top:24px;letter-spacing:-.012em}
+.defline b{color:var(--ink);font-weight:700}
+.n3{color:var(--g);font-weight:800;text-shadow:0 0 26px rgba(77,255,159,.45)}
+
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px);
+  margin-top:clamp(32px,4.6vh,52px)}
+@media(max-width:700px){.trio{grid-template-columns:1fr}}
+.trio .card{text-align:left;padding:clamp(18px,2.2vw,26px)}
+.trio .ico{width:clamp(46px,5.4vw,58px);aspect-ratio:1;margin-bottom:16px;
+  border-radius:14px;display:grid;place-items:center;font-size:clamp(21px,2.5vw,27px);
+  border:1px solid var(--line);
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.10),transparent 70%)}
+.trio .card:nth-child(1) .ico{box-shadow:0 0 38px rgba(169,123,255,.24)}
+.trio .card:nth-child(2) .ico{box-shadow:0 0 38px rgba(74,217,255,.24)}
+.trio .card:nth-child(3) .ico{box-shadow:0 0 38px rgba(77,255,159,.30)}
+.trio h3{font-size:clamp(15px,1.5vw,18px);margin-bottom:8px}
+.trio p{font-size:13.5px;line-height:1.55;color:var(--mut)}
+.trio p b{color:var(--ink);font-weight:650}
+.trio .eq{margin-top:12px;font:800 10.5px/1 var(--mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ac);opacity:.9}
+
+/* ═══════════════════════════════════════════════════════════════
+   S2 · ¿CÓMO FUNCIONA? — cuatro pasos anclados al scroll
+   ═══════════════════════════════════════════════════════════════ */
+#s2{height:460vh;padding:0}
+.pin{position:sticky;top:0;height:var(--vh);display:grid;align-items:center;
+  overflow:hidden}
+.qhead{display:block;font-size:clamp(17px,2.1vw,27px);font-weight:800;
+  letter-spacing:-.022em;line-height:1.12;margin-bottom:clamp(14px,2.4vh,28px)}
+.grid2{display:grid;grid-template-columns:.88fr 1.12fr;
+  gap:clamp(24px,4vw,60px);align-items:center}
+@media(max-width:900px){
+  .grid2{grid-template-columns:1fr;align-content:center}
+  #s2 .fstep p{display:none}
+  #s2 .fstep .why{display:none}
+}
+.stepbox{position:relative;min-height:300px}
+.fstep{position:absolute;inset:0;opacity:0;transform:translateY(18px);
+  pointer-events:none;transition:opacity .5s ease,transform .5s cubic-bezier(.14,1,.28,1)}
+.fstep.on{opacity:1;transform:none}
+.stepbox .k{display:inline-flex;align-items:center;gap:10px;font:800 10.5px/1 var(--mono);
+  letter-spacing:.26em;text-transform:uppercase;color:var(--ac);margin-bottom:16px;
+  padding:7px 12px;border:1px solid currentColor;border-radius:99px;opacity:.95}
+.stepbox .k b{font-size:13px;letter-spacing:0}
+.stepbox h3{font-size:clamp(23px,3.2vw,40px);margin-bottom:16px;max-width:18ch}
+.stepbox p{font-size:clamp(14px,1.2vw,16.5px);line-height:1.6;color:var(--mut);
+  max-width:40ch}
+.stepbox p b{color:var(--ink);font-weight:650}
+.stepbox .why{font:800 10.5px/1.5 var(--mono);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dim);margin-top:18px}
+#cv2{width:100%;height:clamp(300px,52vh,510px);border-radius:20px;
+  border:1px solid var(--line);background:rgba(255,255,255,.018)}
+.tl{display:flex;gap:6px;margin-top:26px}
+.tl button{flex:1;padding:10px 4px;border-radius:9px;border:1px solid var(--line);
+  font:800 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);transition:.35s;position:relative;overflow:hidden}
+.tl button::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:0;
+  background:var(--ac);transition:width .4s}
+.tl button.done{color:var(--mut);border-color:rgba(255,255,255,.16)}
+.tl button.on{color:var(--bg);background:var(--ac);border-color:var(--ac)}
+.tl button.on::after{width:100%}
+@media(max-width:900px){.tl{display:none}}
+
+/* ═══════════════════════════════════════════════════════════════
+   S3 · ¿POR QUÉ SE LLAMAN "C3"?  (el núcleo)
+   ═══════════════════════════════════════════════════════════════ */
+#s3{padding:clamp(84px,13vh,160px) 0 clamp(60px,9vh,110px)}
+#s3 .split{display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(26px,4vw,58px);align-items:center;
+  margin-top:clamp(30px,4.6vh,54px)}
+@media(max-width:900px){#s3 .split{grid-template-columns:1fr;gap:32px}}
+#cv3{width:100%;height:clamp(300px,50vh,490px);border-radius:22px;
+  border:1px solid rgba(77,255,159,.24);background:rgba(77,255,159,.03)}
+
+.letter{display:grid;grid-template-columns:auto 1fr;gap:clamp(16px,2.4vw,28px);
+  align-items:center;padding:clamp(18px,2.4vw,26px) 0;
+  border-top:1px solid var(--line)}
+.letter:last-of-type{border-bottom:1px solid var(--line)}
+.letter b{font:800 clamp(56px,9vw,104px)/.8 var(--sans);letter-spacing:-.06em;
+  color:var(--k);text-align:center;min-width:1.5em;
+  text-shadow:0 0 44px color-mix(in srgb,var(--k) 55%,transparent)}
+.letter i{display:block;font:800 10.5px/1.4 var(--mono);letter-spacing:.24em;
+  text-transform:uppercase;color:var(--dim);font-style:normal;margin-bottom:7px}
+.letter span{display:block;font-size:clamp(15px,1.6vw,20px);line-height:1.34;
+  color:var(--ink);font-weight:600;letter-spacing:-.012em}
+.whyline{margin-top:26px;font-size:clamp(15px,1.5vw,20px);line-height:1.52;
+  color:var(--mut)}
+.whyline b{color:var(--ink);font-weight:700}
+
+/* la cadena: CO₂ → 3-PGA → azúcares */
+.chain{display:flex;align-items:stretch;justify-content:center;flex-wrap:wrap;
+  gap:clamp(10px,1.6vw,20px);margin-top:clamp(34px,5vh,58px)}
+.chain > div{position:relative;flex:1 1 190px;max-width:340px;text-align:center;
+  padding:clamp(20px,2.8vw,32px) 16px;border-radius:20px;
+  border:1px solid var(--line);background:rgba(255,255,255,.026);
+  overflow:hidden;transition:.45s cubic-bezier(.14,1,.28,1)}
+.chain > div::before{content:'';position:absolute;inset:0;opacity:0;
+  transition:opacity .45s;background:radial-gradient(240px circle at 50% 0%,
+    rgba(77,255,159,.16),transparent 70%)}
+.chain > div:hover{border-color:rgba(77,255,159,.42);transform:translateY(-5px)}
+.chain > div:hover::before{opacity:1}
+.chain > div>*{position:relative}
+.chain u{display:block;text-decoration:none;font:800 clamp(24px,3.4vw,40px)/1 var(--sans);
+  letter-spacing:-.04em;color:var(--k)}
+.chain b{display:block;margin-top:10px;font:800 10.5px/1.4 var(--mono);
+  letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+.chain .ar{align-self:center;flex:0 0 auto;font-size:clamp(18px,2.6vw,30px);
+  color:var(--g);opacity:.75;animation:slide 2.6s ease-in-out infinite}
+@keyframes slide{0%,100%{transform:translateX(-5px);opacity:.45}
+  50%{transform:translateX(5px);opacity:1}}
+
+/* ═══════════════════════════════════════════════════════════════
+   S4 · ¿QUÉ LAS CARACTERIZA?
+   ═══════════════════════════════════════════════════════════════ */
+#s4{padding:clamp(80px,12vh,150px) 0}
+#s4 .split{display:grid;grid-template-columns:.95fr 1.05fr;
+  gap:clamp(26px,4vw,58px);align-items:center}
+@media(max-width:900px){#s4 .split{grid-template-columns:1fr;gap:32px}}
+#cv4{width:100%;height:clamp(300px,50vh,480px);border-radius:22px;
+  border:1px solid var(--line);background:rgba(255,255,255,.018)}
+.cond{display:grid;gap:14px;margin-top:28px}
+.cond div{position:relative;padding:20px 22px;border-radius:16px;
+  border:1px solid var(--line);background:rgba(255,255,255,.022);
+  display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;
+  transition:.4s}
+.cond div:hover{transform:translateX(5px)}
+.cond .em{font-size:27px;line-height:1}
+.cond b{display:block;font:800 11px/1.5 var(--mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--k);margin-bottom:7px}
+.cond p{font-size:14px;line-height:1.58;color:var(--mut)}
+.cond p b{color:var(--ink);font-weight:650}
+.cond .good{border-color:rgba(77,255,159,.30);background:rgba(77,255,159,.055)}
+.cond .bad{border-color:rgba(255,196,77,.30);background:rgba(255,196,77,.05)}
+
+/* ═══════════════════════════════════════════════════════════════
+   S5 · EJEMPLO DE CULTIVO
+   ═══════════════════════════════════════════════════════════════ */
+#s5{padding:clamp(84px,13vh,160px) 0;text-align:center}
+.hero{display:grid;justify-items:center;margin-top:clamp(28px,4.4vh,50px)}
+.hero .e{font-size:clamp(74px,13vw,150px);line-height:1;display:block;
+  filter:drop-shadow(0 18px 44px rgba(255,196,77,.32));
+  animation:sway 5.4s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-3.5deg) translateY(0)}
+  50%{transform:rotate(3.5deg) translateY(-12px)}}
+.hero h2{font-size:clamp(40px,8.4vw,104px);letter-spacing:-.045em;margin-top:14px}
+.hero .sub{margin-top:16px;font:800 clamp(11px,1.3vw,14px)/1 var(--mono);
+  letter-spacing:.32em;text-transform:uppercase;color:var(--g)}
+.hero .badge{display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+  padding:9px 16px;border-radius:99px;border:1px solid rgba(77,255,159,.4);
+  background:rgba(77,255,159,.10);color:var(--g);
+  font:800 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase}
+.others{margin-top:clamp(40px,6vh,66px)}
+.others p{font:800 10.5px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:20px}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.chips span{display:inline-flex;align-items:center;gap:11px;padding:13px 20px;
+  border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.026);
+  font-size:15px;font-weight:650;letter-spacing:-.01em;
+  transition:.4s cubic-bezier(.14,1,.28,1)}
+.chips span i{font-style:normal;font-size:21px;line-height:1;transition:transform .4s}
+.chips span:hover{transform:translateY(-4px);border-color:rgba(77,255,159,.4);
+  background:rgba(77,255,159,.08)}
+.chips span:hover i{transform:scale(1.2) rotate(-8deg)}
+.chips span u{text-decoration:none;font:800 10px/1 var(--mono);letter-spacing:.14em;
+  color:var(--g);opacity:.8}
+
+/* ═══════════════════════════════════════════════════════════════
+   S6 · DATO CURIOSO
+   ═══════════════════════════════════════════════════════════════ */
+#s6{padding:clamp(70px,11vh,140px) 0}
+#s6 .fact{position:relative;margin-top:clamp(28px,4.2vh,46px);
+  padding:clamp(26px,4vw,52px);border-radius:24px;
+  border:1px solid rgba(169,123,255,.28);overflow:hidden;
+  background:
+    radial-gradient(700px circle at 10% 0%,rgba(169,123,255,.17),transparent 62%),
+    linear-gradient(180deg,rgba(255,255,255,.03),transparent)}
+#s6 .qlabel{font:800 10px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;
+  color:var(--v);margin-bottom:22px}
+#s6 .factsplit{display:grid;grid-template-columns:1.1fr .9fr;
+  gap:clamp(24px,4vw,54px);align-items:center}
+@media(max-width:900px){#s6 .factsplit{grid-template-columns:1fr;gap:30px}}
+#cv5{width:100%;height:clamp(260px,42vh,400px);border-radius:20px;
+  border:1px solid rgba(169,123,255,.24);background:rgba(169,123,255,.04)}
+#s6 h2{font-size:clamp(23px,3.5vw,44px);max-width:24ch}
+#s6 .lead{margin-top:20px}
+#s6 .lead b{color:var(--ink);font-weight:700}
+#s6 .lead .n3{color:var(--g);font-weight:800}
+
+/* ═══════════════════════════════════════════════════════════════
+   S7 · CIERRE
+   ═══════════════════════════════════════════════════════════════ */
+#s7{min-height:var(--vh);display:grid;place-items:center;padding:clamp(70px,11vh,130px) 0;
+  text-align:center;overflow:hidden}
+#cv6{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#s7 .wrap{position:relative;z-index:2}
+#s7 .eq{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:clamp(10px,1.8vw,22px);margin-top:clamp(26px,4vh,44px)}
+#s7 .eq b{font:800 clamp(30px,5.4vw,66px)/1 var(--sans);letter-spacing:-.04em}
+#s7 .eq b.mid{font-size:clamp(13px,1.9vw,24px);letter-spacing:.14em;
+  color:var(--mut);font-weight:800;line-height:1.3;max-width:11ch}
+#s7 .eq i{font-style:normal;font-size:clamp(17px,2.4vw,30px);color:var(--g);
+  animation:slide 2.8s ease-in-out infinite}
+#s7 .c3{display:inline-grid;place-items:center;margin-top:clamp(30px,4.4vh,50px);
+  width:clamp(112px,14vw,168px);aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(77,255,159,.42);
+  background:radial-gradient(circle at 50% 30%,rgba(77,255,159,.24),transparent 70%);
+  box-shadow:0 0 80px rgba(77,255,159,.24),inset 0 0 46px rgba(77,255,159,.12);
+  animation:breathe 5.5s ease-in-out infinite}
+#s7 .c3 b{font:800 clamp(48px,6.6vw,76px)/1 var(--sans);letter-spacing:-.05em;
+  background:linear-gradient(180deg,#fff,var(--g));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#s7 .c3 i{display:block;font:800 10px/1 var(--mono);letter-spacing:.32em;
+  text-transform:uppercase;color:var(--g);font-style:normal;margin-top:7px}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PIE
+   ═══════════════════════════════════════════════════════════════ */
+footer{position:relative;z-index:5;padding:36px var(--pad) 46px;
+  border-top:1px solid var(--line);display:flex;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;
+  font:700 10.5px/1.7 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim)}
+footer b{color:var(--mut)}
+
+/* ═══════════════════════════════════════════════════════════════
+   REVELADOS CON SCROLL NATIVO (sin JS) + respaldo
+   ═══════════════════════════════════════════════════════════════ */
+.rv{opacity:1}
+@supports(animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    .rv{animation:rvIn linear both;animation-timeline:view();
+      animation-range:entry 2% cover 24%}
+    @keyframes rvIn{
+      from{opacity:0;transform:translateY(30px) scale(.98);filter:blur(6px)}
+      to{opacity:1;transform:none;filter:none}}
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .rv{opacity:1!important;transform:none!important;filter:none!important}
+  #grain,#halo{display:none!important}
+}
+@media (hover:none){#halo{display:none}}
+
+/* ═══════════════════════════════════════════════════════════════
+   IMPRESIÓN / PDF
+   ═══════════════════════════════════════════════════════════════ */
+@media print{
+  @page{margin:12mm}
+  :root{--bg:#fff;--ink:#08221a;--mut:#3d5a50;--dim:#6d837b;--ac:#07734a;
+    --line:rgba(0,0,0,.16);--vh:auto}
+  html{scroll-behavior:auto}
+  body{background:#fff;color:#08221a}
+  #bg,#veil,#grain,#halo,#bar,#top,#idx,#cv0,.scrollcue{display:none!important}
+  section{display:block!important;height:auto!important;min-height:0!important;
+    padding:0 0 8mm!important;page-break-after:always;break-after:page}
+  #s2{height:auto!important}
+  .pin{position:static!important;height:auto!important;display:block!important}
+  #s2 .grid2{grid-template-columns:1fr!important}
+  .stepbox{min-height:0!important}
+  .fstep{position:static!important;opacity:1!important;transform:none!important;
+    animation:none!important;page-break-inside:avoid}
+  #s1 .split,#s3 .split,#s4 .split,#s6 .factsplit{grid-template-columns:1fr!important}
+  #cv1,#cv2,#cv3,#cv4,#cv5{height:150px!important;border:1px solid #ccc}
+  .card,.chip,.cond div,.chain > div,.fact{border:1px solid #ccc!important;
+    background:#fff!important;break-inside:avoid}
+  .letter{break-inside:avoid}
+  .rv{opacity:1!important;transform:none!important;filter:none!important;
+    animation:none!important}
+  .hero .e{animation:none!important}
+  footer{border-color:#ccc;color:#6d837b}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#s1">Saltar al contenido</a>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="veil" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+<div id="halo" aria-hidden="true"></div>
+<div id="bar" aria-hidden="true"></div>
+
+<header id="top">
+  <span class="mark"><i></i>Plantas C₃</span>
+  <span class="hint" style="color:#fff;opacity:.6">Fotosíntesis y fijación del carbono</span>
+</header>
+<nav id="idx" aria-label="Secciones"></nav>
+
+<main>
+
+
+<!-- ═══════════ S0 · PORTADA ═══════════ -->
+<section id="s0" aria-labelledby="t0">
+  <canvas id="cv0" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <h1 id="t0"><small>Fotosíntesis y fijación del carbono</small>
+      Plantas <span class="grad">C₃</span></h1>
+    <div class="c3" role="img" aria-label="C tres: tres carbonos">
+      <b>C₃</b><i>3 carbonos</i>
+    </div>
+  </div>
+  <div class="scrollcue" aria-hidden="true"><span class="hint">Desliza</span><i></i></div>
+</section>
+
+<!-- ═══════════ S1 · ¿QUÉ ES UNA PLANTA C3? ═══════════ -->
+<section id="s1" aria-labelledby="t1">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <span class="eyebrow rv">☀ ¿Qué es una planta C₃?</span>
+        <h2 id="t1" class="rv">Las plantas C₃ realizan la fotosíntesis mediante el
+          <span style="color:var(--v)">ciclo de Calvin</span> y fijan el CO₂
+          formando primero un compuesto de <span class="n3">3 carbonos</span>.</h2>
+      </div>
+      <canvas id="cv1" class="rv" role="img"
+        aria-label="Animación del ciclo de Calvin: una molécula de CO2 entra en un
+        bucle cerrado, se une a una molécula de tres carbonos, da la vuelta al
+        ciclo y sale un azúcar de tres carbonos, el 3-PGA, que continúa hacia los
+        azúcares."></canvas>
+    </div>
+
+    <div class="trio">
+      <div class="card rv" style="--ac:var(--v)">
+        <div class="ico" aria-hidden="true">🔬</div>
+        <h3>Ciclo de Calvin</h3>
+        <p>Es el proceso con el que la planta fija el CO₂ dentro del
+          cloroplasto.</p>
+        <div class="eq">Fijación del carbono</div>
+      </div>
+      <div class="card rv" style="--ac:var(--c)">
+        <div class="ico" aria-hidden="true">🌬️</div>
+        <h3>Fija el CO₂</h3>
+        <p>El gas del aire entra a la hoja y queda atrapado en una molécula
+          nueva.</p>
+        <div class="eq">Entra por los estomas</div>
+      </div>
+      <div class="card rv" style="--ac:var(--g)">
+        <div class="ico" aria-hidden="true">3️⃣</div>
+        <h3>Primero, 3 carbonos</h3>
+        <p>El primer producto estable ya tiene <b>tres átomos de carbono</b>.</p>
+        <div class="eq">3-PGA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ S2 · ¿CÓMO FUNCIONA LA FOTOSÍNTESIS C3? ═══════════ -->
+<section id="s2" aria-labelledby="t2">
+  <div class="pin">
+    <div class="wrap">
+      <span class="qhead rv" id="t2">🍃 ¿Cómo funciona la fotosíntesis C₃?</span>
+      <div class="grid2">
+        <div class="stepbox" id="stepbox"></div>
+        <div><canvas id="cv2" role="img"
+          aria-label="Los cuatro pasos de la fotosíntesis C3 en una sola animación:
+          uno, la clorofila de la hoja captura la energía de la luz; dos, el CO2
+          entra a la hoja por los estomas; tres, dentro del cloroplasto el CO2 es
+          fijado y se convierte en 3-PGA; cuatro, la energía obtenida produce los
+          compuestos con los que la planta crece."></canvas></div>
+      </div>
+      <div class="tl" id="tl" role="tablist" aria-label="Los cuatro pasos"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════ S3 · ¿POR QUÉ SE LLAMAN "C3"? ═══════════ -->
+<section id="s3" aria-labelledby="t3">
+  <div class="wrap">
+    <span class="eyebrow rv">🧬 ¿Por qué se llaman "C₃"?</span>
+    <h2 id="t3" class="rv">El primer producto estable de la fijación del CO₂
+      tiene <span class="grad">3 átomos de carbono</span>.</h2>
+
+    <div class="split">
+      <canvas id="cv3" class="rv" role="img"
+        aria-label="Tres esferas de carbono se aproximan y se enlazan entre sí
+        formando el 3-PGA, el primer producto estable de tres carbonos. Encima
+        aparece un gran número tres que se dibuja trazo a trazo."></canvas>
+      <div>
+        <div class="letter rv" style="--k:var(--c)">
+          <b>C</b>
+          <div><i>La letra</i><span>Carbono</span></div>
+        </div>
+        <div class="letter rv" style="--k:var(--g)">
+          <b>3</b>
+          <div><i>El número</i><span>Tres carbonos</span></div>
+        </div>
+        <p class="whyline rv">Se llaman <b>C₃</b> porque el primer producto estable
+          de la fijación del CO₂ tiene <b>3 átomos de carbono</b>.</p>
+      </div>
+    </div>
+
+    <div class="chain" role="img"
+      aria-label="Cadena: CO2, dos átomos de oxígeno y uno de carbono, se convierte
+      en 3-PGA, el primer producto estable de tres carbonos, y de ahí salen los
+      azúcares.">
+      <div class="rv" style="--k:var(--c)">
+        <u>CO₂</u><b>Entra del aire</b>
+      </div>
+      <span class="ar rv" aria-hidden="true">→</span>
+      <div class="rv" style="--k:var(--g)">
+        <u>3-PGA</u><b>Primer producto estable</b>
+      </div>
+      <span class="ar rv" aria-hidden="true">→</span>
+      <div class="rv" style="--k:var(--s)">
+        <u>🍬</u><b>Azúcares</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ S4 · ¿QUÉ LAS CARACTERIZA? ═══════════ -->
+<section id="s4" aria-labelledby="t4">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <span class="eyebrow rv" style="--ac:var(--s)">🌡️ ¿Qué las caracteriza?</span>
+        <h2 id="t4" class="rv">Funcionan bien con <span style="color:var(--g)">temperaturas
+          moderadas</span> y <span style="color:var(--c)">suficiente agua</span>.</h2>
+        <div class="cond">
+          <div class="good rv" style="--k:var(--g)">
+            <span class="em" aria-hidden="true">✅</span>
+            <div>
+              <b>Su terreno</b>
+              <p>Las plantas C₃ funcionan especialmente bien en
+                <b>temperaturas moderadas</b> y con <b>suficiente agua</b>.</p>
+            </div>
+          </div>
+          <div class="bad rv" style="--k:var(--s)">
+            <span class="em" aria-hidden="true">🔥</span>
+            <div>
+              <b>Su punto flaco</b>
+              <p>Con <b>mucho calor o sequía</b> pueden disminuir su
+                <b>entrada de CO₂</b> y su <b>eficiencia fotosintética</b>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <canvas id="cv4" class="rv" role="img"
+        aria-label="Un termómetro y un nivel de agua animados. En la zona
+        templada, marcada en verde, los indicadores están altos: la entrada de
+        CO2 y la eficiencia fotosintética son buenas. Al subir la temperatura y
+        bajar el agua, ambos indicadores caen."></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ S5 · EJEMPLO DE CULTIVO ═══════════ -->
+<section id="s5" aria-labelledby="t5">
+  <div class="wrap">
+    <span class="eyebrow rv" style="--ac:var(--s)">🌾 Ejemplo de cultivo</span>
+    <div class="hero">
+      <span class="e" aria-hidden="true">🌾</span>
+      <h2 id="t5" class="rv">Trigo</h2>
+      <p class="sub rv">Una planta C₃</p>
+      <span class="badge rv" aria-hidden="true">C = Carbono · 3 = Tres carbonos</span>
+    </div>
+    <div class="others">
+      <p class="rv">También son C₃</p>
+      <div class="chips">
+        <span class="rv"><i aria-hidden="true">🍚</i>Arroz<u>C₃</u></span>
+        <span class="rv"><i aria-hidden="true">🫘</i>Soya<u>C₃</u></span>
+        <span class="rv"><i aria-hidden="true">🫘</i>Frijol<u>C₃</u></span>
+        <span class="rv"><i aria-hidden="true">🥔</i>Papa<u>C₃</u></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ S6 · DATO CURIOSO ═══════════ -->
+<section id="s6" aria-labelledby="t6">
+  <div class="wrap">
+    <div class="fact">
+      <span class="qlabel">🤯 Dato curioso</span>
+      <div class="factsplit">
+        <div>
+          <h2 id="t6" class="rv">Las plantas <span class="grad">C₃</span> son el
+            tipo de planta fotosintética <span class="grad">más común</span>.</h2>
+          <p class="lead rv">Lo que acabas de ver no es una curiosidad ni un
+            caso raro: es el <b>sistema por defecto</b> con el que la mayoría de
+            las plantas del mundo fija el carbono. Por eso el
+            <span class="n3">3</span> de <b>C₃</b> es la firma del planeta
+            entero, no de una familia cualquiera.</p>
+        </div>
+        <canvas id="cv5" class="rv" role="img"
+          aria-label="Un campo de plantas animadas. La gran mayoría se iluminan
+          en verde y llevan la marca C3; unas pocas permanecen apagadas. Cuenta
+          cómo el grupo verde crece hasta ser casi todo el campo."></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ S7 · CIERRE ═══════════ -->
+<section id="s7" aria-labelledby="t7">
+  <canvas id="cv6" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <span class="eyebrow rv">En una línea</span>
+    <h2 id="t7" class="sr">C₃ = primer producto estable, 3 carbonos</h2>
+    <div class="eq rv">
+      <b style="color:var(--g)">C₃</b>
+      <i>=</i>
+      <b class="mid">PRIMER PRODUCTO ESTABLE</b>
+      <i>→</i>
+      <b style="color:var(--g)">3 CARBONOS</b>
+    </div>
+    <div class="c3" role="img" aria-label="C tres: tres carbonos">
+      <b>C₃</b><i>3 carbonos</i>
+    </div>
+    <p class="hint rv" style="margin-top:26px">🌿 🧬</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span><b>Plantas C₃</b></span>
+  <span>Fotosíntesis y fijación del carbono</span>
+  <span>Infografía · sin recursos externos</span>
+</footer>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════
+   NÚCLEO
+   ═══════════════════════════════════════════════════════════════ */
+const TAU=Math.PI*2;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rr=(a,b)=>a+Math.random()*(b-a);
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LOW=(navigator.hardwareConcurrency||4)<=4;
+const CAP=LOW?.55:1;
+
+/* un único bucle para las 7 escenas: nada de requestAnimationFrame sueltos */
+const TASKS=[];
+let RAF=0;
+function frame(t){
+  RAF=requestAnimationFrame(frame);
+  if(document.hidden) return;
+  for(let i=0;i<TASKS.length;i++) TASKS[i](t);
+}
+const kick=()=>{ if(!RAF) RAF=requestAnimationFrame(frame); };
+
+/* registro de escena: DPR, resize sin realimentación, gate por sección y bloom */
+function scene(cv,cfg){
+  if(!cv) return;
+  const c=cv.getContext('2d');
+  const dpr=cfg.dpr||1;
+  let W=0,H=0,vis=!cfg.gate,bl=null,bc=null,last=0,acc=0;
+  function size(){
+    const w=Math.round(cv.offsetWidth), h=Math.round(cv.offsetHeight);
+    if(!w||!h||(w===W&&h===H)) return;
+    W=w;H=h;
+    cv.width=Math.max(1,Math.round(W*dpr));
+    cv.height=Math.max(1,Math.round(H*dpr));
+    c.setTransform(dpr,0,0,dpr,0,0);
+    if(cfg.bloom){
+      bl=document.createElement('canvas');
+      bc=bl.getContext('2d');
+      bl.width=Math.max(1,Math.round(W/4)); bl.height=Math.max(1,Math.round(H/4));
+    }
+    cfg.resize&&cfg.resize(W,H,c);
+  }
+  new ResizeObserver(size).observe(cv);
+  size();
+  if(cfg.gate){
+    TASKS.push(()=>{
+      const v=typeof cfg.gate==='function'?!!cfg.gate(Phase.cur):cfg.gate.includes(Phase.cur);
+      if(v!==vis){ vis=v; if(vis) last=0; } });
+  }else{
+    new IntersectionObserver(e=>{vis=e[0].isIntersecting;},{threshold:0}).observe(cv);
+  }
+  const step=1000/(cfg.fps||60);
+  TASKS.push(t=>{
+    if(!vis||!W) return;
+    if(t-last<step) return;
+    last=t;
+    c.clearRect(0,0,W,H);
+    cfg.draw(c,W,H,t/1000);
+    if(bl){
+      c.save();
+      c.globalCompositeOperation='lighter';
+      bc.clearRect(0,0,bl.width,bl.height);
+      bc.drawImage(cv,0,0,bl.width,bl.height);
+      c.filter='blur(6px)'; c.globalAlpha=.5;
+      c.drawImage(bl,0,0,W,H);
+      c.filter='none'; c.restore();
+    }
+  });
+  kick();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRIMITIVAS DE DIBUJO
+   ═══════════════════════════════════════════════════════════════ */
+function rgba(col,a=1){
+  if(col[0]==='#'){
+    let h=col.slice(1);
+    if(h.length===3) h=[...h].map(x=>x+x).join('');
+    const n=parseInt(h.slice(0,6),16)||0;
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+  }
+  return col;
+}
+function glow(c,x,y,r,col,a=1){
+  if(r<=.3||a<=0) return;
+  const g=c.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,rgba(col,a));
+  g.addColorStop(.45,rgba(col,a*.35));
+  g.addColorStop(1,rgba(col,0));
+  c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+}
+function txt(c,s,x,y,size,col,wt=700,mono=false,align='center'){
+  c.font=`${wt} ${size}px ${mono
+    ?"'Cascadia Mono',ui-monospace,Consolas,monospace"
+    :"Inter,system-ui,-apple-system,'Segoe UI',sans-serif"}`;
+  c.textAlign=align; c.textBaseline='middle';
+  c.fillStyle=col; c.fillText(s,x,y);
+}
+/* carbono: esfera verde con luz propia */
+function C(c,x,y,r,a=1){
+  const g=c.createRadialGradient(x-r*.35,y-r*.35,r*.08,x,y,r);
+  g.addColorStop(0,'#f0fff7');
+  g.addColorStop(.28,'#7dffc0');
+  g.addColorStop(.72,'#17b06a');
+  g.addColorStop(1,'#05301d');
+  c.globalAlpha*=a;
+  c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+  c.strokeStyle=rgba('#4dff9f',.6*a);
+  c.lineWidth=1.3; c.stroke();
+  c.globalAlpha/=a;
+}
+/* oxígeno: esfera roja con dos átomos */
+function O2(c,x,y,r,t,a=1){
+  c.save(); c.translate(x,y); c.rotate(t);
+  c.globalAlpha*=a;
+  c.fillStyle='rgba(255,95,143,.92)';
+  c.beginPath(); c.arc(-r*.82,0,r*.62,0,TAU); c.fill();
+  c.beginPath(); c.arc(r*.82,0,r*.62,0,TAU); c.fill();
+  c.strokeStyle=rgba('#ffb4cd',.7); c.lineWidth=1.2;
+  c.beginPath(); c.arc(-r*.82,0,r*.62,0,TAU); c.stroke();
+  c.beginPath(); c.arc(r*.82,0,r*.62,0,TAU); c.stroke();
+  c.strokeStyle=rgba('#ff5f8f',.8); c.lineWidth=2;
+  c.beginPath(); c.moveTo(-r*.3,0); c.lineTo(r*.3,0); c.stroke();
+  c.restore();
+}
+/* CO2: un carbono con dos oxígenos */
+function CO2m(c,x,y,r,t,a=1){
+  c.save(); c.translate(x,y); c.rotate(t);
+  c.globalAlpha*=a;
+  C(c,0,0,r);
+  c.strokeStyle=rgba('#9fd2ee',.6); c.lineWidth=1.6;
+  c.beginPath(); c.moveTo(r*.9,0); c.lineTo(r*1.5,-r*.5); c.stroke();
+  c.beginPath(); c.moveTo(r*.9,0); c.lineTo(r*1.5,r*.5); c.stroke();
+  c.fillStyle='rgba(255,95,143,.9)';
+  c.beginPath(); c.arc(r*1.72,-r*.6,r*.5,0,TAU); c.fill();
+  c.beginPath(); c.arc(r*1.72,r*.6,r*.5,0,TAU); c.fill();
+  c.restore();
+}
+/* anillo hexagonal (glucosa) */
+function ring(c,x,y,r,col,t,a=1){
+  c.save(); c.translate(x,y); c.rotate(t);
+  c.globalAlpha*=a;
+  c.beginPath();
+  for(let i=0;i<6;i++){
+    const an=i*TAU/6-Math.PI/2, px=Math.cos(an)*r, py=Math.sin(an)*r;
+    i?c.lineTo(px,py):c.moveTo(px,py);
+  }
+  c.closePath();
+  c.fillStyle=rgba(col,.14); c.fill();
+  c.strokeStyle=rgba(col,.95); c.lineWidth=2.2;
+  c.shadowColor=col; c.shadowBlur=22; c.stroke();
+  c.shadowBlur=0; c.restore();
+}
+/* etiqueta con línea de puntos */
+function tag(c,s,x,y,col,a=1){
+  if(a<.05) return;
+  c.globalAlpha*=a;
+  txt(c,s,x,y,12.5,col,800,true);
+  c.strokeStyle=rgba(col,.45); c.lineWidth=1; c.setLineDash([2,3]);
+  c.beginPath(); c.moveTo(x,y+10); c.lineTo(x,y+19); c.stroke();
+  c.setLineDash([]);
+  c.globalAlpha/=a;
+}
+function rrect(c,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FONDO VIVO
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#bg'),{alpha:false,bloom:true,draw(c,w,h,t){
+  const g=c.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#061012'); g.addColorStop(.55,'#040a0c'); g.addColorStop(1,'#03070a');
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+  c.globalCompositeOperation='lighter';
+  /* auroras de dos colores que se cruzan muy despacio */
+  for(let k=0;k<3;k++){
+    const cx=w*(.24+.28*k)+Math.sin(t*.11+k*2)*w*.14;
+    const cy=h*(.26+.2*k)+Math.cos(t*.09+k)*h*.12;
+    const col=['#4dff9f','#4ad9ff','#a97bff'][k];
+    for(let i=0;i<4;i++){
+      const r=w*(.30-i*.055);
+      glow(c,cx,cy,r,col,.030+i*.008);
+    }
+  }
+  /* motas de oxígeno */
+  for(let i=0;i<Math.round(w/26)*CAP;i++){
+    const sd=i*2.39996;
+    const y=((i*97.3+t*(8+i%5)*1.6)%(h+40))-20;
+    const x=(i*131.7+Math.sin(sd+t*.3)*30)%w;
+    c.globalAlpha=.05+.13*Math.abs(Math.sin(t*.6+sd));
+    c.fillStyle=i%3?'#4dff9f':'#4ad9ff';
+    c.beginPath(); c.arc(x,y,i%5===0?1.9:1.1,0,TAU); c.fill();
+  }
+  c.globalAlpha=1; c.globalCompositeOperation='source-over';
+}});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   S0 · PORTADA: clorofila girando + CO₂ a la deriva + rayos de sol
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv0'),{fps:LOW?40:60,bloom:true,draw(c,w,h,t){
+  const cx=w/2, cy=h*.44, R=Math.min(w*.3,h*.34,260);
+
+  /* rayos de sol que entran por la esquina superior izquierda */
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let i=0;i<9;i++){
+    const a=-.72+i*.10+Math.sin(t*.25+i)*.012;
+    const len=h*1.5;
+    c.globalAlpha=.020+.020*Math.sin(t*.5+i*1.7);
+    c.strokeStyle='#ffc44d'; c.lineWidth=1+i%3;
+    c.beginPath();
+    c.moveTo(-40+i*8,-40);
+    c.lineTo(-40+Math.cos(a)*len, -40+Math.sin(a)*len);
+    c.stroke();
+  }
+  c.restore();
+
+  /* halo detrás del titulo */
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cy,R*2.6,'#4dff9f',.10);
+  glow(c,cx-R*.5,cy-R*.6,R*1.5,'#4ad9ff',.08);
+  c.restore();
+
+  /* molécula de clorofila: anillo de 4 nitrogenos + magnesio */
+  c.save(); c.translate(cx,cy); c.rotate(t*.12);
+  c.globalCompositeOperation='lighter';
+  for(let i=0;i<4;i++){
+    const a=i*TAU/4+Math.PI/4, d=R*.62;
+    glow(c,Math.cos(a)*d,Math.sin(a)*d,R*.34,'#4ad9ff',.20);
+  }
+  glow(c,0,0,R*.46,'#ffc44d',.26);
+  c.strokeStyle='rgba(120,235,190,.5)'; c.lineWidth=2;
+  c.beginPath();
+  for(let i=0;i<4;i++){
+    const a=i*TAU/4+Math.PI/4;
+    c.moveTo(Math.cos(a)*R*.22,Math.sin(a)*R*.22);
+    c.lineTo(Math.cos(a)*R*.62,Math.sin(a)*R*.62);
+  }
+  c.stroke();
+  c.restore();
+
+  /* el magnesio en el centro */
+  c.save(); c.translate(cx,cy);
+  const mg=c.createRadialGradient(-4,-4,1,0,0,20);
+  mg.addColorStop(0,'#fffbe8'); mg.addColorStop(.4,'#ffd76a');
+  mg.addColorStop(1,'#8a6410');
+  c.fillStyle=mg; c.beginPath(); c.arc(0,0,17,0,TAU); c.fill();
+  c.strokeStyle='rgba(255,196,77,.85)'; c.lineWidth=1.6; c.stroke();
+  c.restore();
+
+  /* CO₂ subiendo desde abajo, como entrando por los estomas */
+  for(let i=0;i<9;i++){
+    const ph=(i/9+t*.055)%1;
+    const x=w*(.06+.88*((i*.137)%1))+Math.sin(t*.5+i)*22;
+    const y=h*1.05-ph*h*1.1;
+    c.globalAlpha=Math.sin(ph*Math.PI)*.5;
+    CO2m(c,x,y,7+Math.sin(i)*1.6,t*.25+i,.9);
+  }
+  c.globalAlpha=1;
+}});
+
+/* ═══════════════════════════════════════════════════════════════
+   S1 · EL CICLO DE CALVIN
+   el CO₂ entra, se une alcarbono de tres, y sale un azúcar
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv1'),{fps:LOW?30:60,gate:['s1'],draw(c,w,h,t){
+  const cx=w*.5, cy=h*.5, R=Math.min(w*.30,h*.30,132);
+  const loop=(t*.155)%1;                    /* un vuelta completa del ciclo */
+  const eIn =ease(clamp(loop/.26,0,1));     /* el CO2 entra        */
+  const eJo =ease(clamp((loop-.26)/.16,0,1));/* se une al trio     */
+  const eGo =ease(clamp((loop-.44)/.24,0,1));/* el trio recorre   */
+  const eOut=ease(clamp((loop-.72)/.28,0,1));/* sale el azucar    */
+
+  /* ── el aro del ciclo ── */
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cy,R*1.5,'#a97bff',.10);
+  c.restore();
+  c.strokeStyle='rgba(169,123,255,.30)'; c.lineWidth=2;
+  c.setLineDash([7,9]); c.lineDashOffset=-t*13;
+  c.beginPath(); c.arc(cx,cy,R,0,TAU); c.stroke();
+  c.setLineDash([]);
+
+  /* arco recorrido, en verde */
+  c.strokeStyle='rgba(77,255,159,.85)'; c.lineWidth=3.4;
+  c.lineCap='round';
+  c.beginPath(); c.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+TAU*eGo); c.stroke();
+  c.lineCap='butt';
+
+  /* marcas de las tres etapas del ciclo */
+  c.fillStyle='rgba(169,123,255,.5)';
+  for(let i=0;i<3;i++){
+    const a=-Math.PI/2+i*TAU/3;
+    c.beginPath(); c.arc(cx+Math.cos(a)*R,cy+Math.sin(a)*R,3,0,TAU); c.fill();
+  }
+
+  /* ── el CO₂ llegando por la izquierda ── */
+  const inX=lerp(cx-R*1.62,cx-R*.96,eIn);
+  const inY=cy+Math.sin(t*1.1)*7;
+  c.save();
+  c.globalAlpha=clamp(eIn*2,0,1)*(1-eOut*.3);
+  c.strokeStyle='rgba(74,217,255,.34)'; c.lineWidth=1.4; c.setLineDash([3,5]);
+  c.beginPath(); c.moveTo(cx-R*1.62,inY); c.lineTo(cx-R*.96,inY); c.stroke();
+  c.setLineDash([]);
+  CO2m(c,inX,inY,10,t*.5,1);
+  c.restore();
+  if(eIn>.55) tag(c,'CO₂ ENTRA',inX,inY-30,'#4ad9ff',clamp((eIn-.55)*4,0,1));
+
+  /* ── el trío de carbonos dentro del aro ── */
+  const a0=-Math.PI/2+TAU*eGo;
+  const sp=R*.34;
+  const trio=(a)=>[
+    cx+Math.cos(a)*sp, cy+Math.sin(a)*sp,
+    cx+Math.cos(a+2.09)*sp, cy+Math.sin(a+2.09)*sp,
+    cx+Math.cos(a+4.19)*sp, cy+Math.sin(a+4.19)*sp
+  ];
+  const P=trio(a0);
+  /* enlaces entre los tres */
+  c.strokeStyle=rgba('#4dff9f',.42+.5*eJo); c.lineWidth=2.4;
+  c.beginPath();
+  for(let i=0;i<3;i++){
+    const j=(i+1)%3;
+    c.moveTo(P[i*2],P[i*2+1]); c.lineTo(P[j*2],P[j*2+1]);
+  }
+  c.stroke();
+  /* el carbono que acaba de llegar se marca un instante */
+  for(let i=0;i<3;i++){
+    c.save();
+    if(i===0) c.globalAlpha=.45+.55*Math.abs(Math.sin(t*4));
+    C(c,P[i*2],P[i*2+1],10.5,1);
+    c.restore();
+  }
+  if(eGo>.14) tag(c,'3 CARBONOS',P[4],P[5]-26,'#4dff9f',clamp((eGo-.14)*4,0,1));
+
+  /* ── el azúcar saliendo por la derecha ── */
+  const outX=lerp(cx+R*.96,cx+R*1.7,eOut);
+  c.save();
+  c.globalAlpha=clamp(eOut*2.2,0,1);
+  ring(c,outX,cy-Math.sin(t*1.3)*6,17,'#ffc44d',t*.4,1);
+  c.restore();
+  if(eOut>.4) tag(c,'AZÚCAR SALE',outX,cy-40,'#ffc44d',clamp((eOut-.4)*4,0,1));
+
+  /* ── títulos ── */
+  txt(c,'CICLO DE CALVIN',cx,cy+R*.52,11.5,'#a97bff',800,true);
+  txt(c,'FIJAR EL CO₂',cx,cy+R*.52+20,10,'rgba(143,124,214,.8)',800,true);
+}});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   S2 · LOS CUATRO PASOS — dirigidos por el scroll
+   ═══════════════════════════════════════════════════════════════ */
+const STAGES=[
+  {k:'PASO 1', e:'☀️', t:'Captura de luz',
+   p:'La <b>clorofila</b> absorbe energía luminosa.',
+   w:'La clorofila convierte la luz en la energía que gasto después.'},
+  {k:'PASO 2', e:'🌬️', t:'Entrada de CO₂',
+   p:'El <b>CO₂</b> entra a la hoja a través de los <b>estomas</b>.',
+   w:'Un carbono de cada vez, desde el aire.'},
+  {k:'PASO 3', e:'🔬', t:'Ciclo de Calvin',
+   p:'El <b>CO₂</b> es fijado dentro del <b>cloroplasto</b>.',
+   w:'El primer producto estable ya tiene 3 carbonos.'},
+  {k:'PASO 4', e:'🍬', t:'Formación de azúcares',
+   p:'La <b>energía obtenida</b> permite producir compuestos que la planta utiliza para <b>crecer</b>.',
+   w:'Glucosa, almidón, celulosa: con eso crece.'}];
+const FLOW={i:0,p:0};
+
+/* la hoja, compartida por los tres primeros pasos */
+function leafPath(c,cx,cy,L,Wd,rot){
+  c.save(); c.translate(cx,cy); c.rotate(rot||0);
+  c.beginPath();
+  c.moveTo(0,-L);
+  c.bezierCurveTo(Wd,-L*.52, Wd*.86,L*.46, 0,L);
+  c.bezierCurveTo(-Wd*.86,L*.46, -Wd,-L*.52, 0,-L);
+  c.closePath();
+  c.restore();
+}
+
+scene($('#cv2'),{fps:LOW?30:60,gate:['s2'],draw(c,w,h,t){
+  const n=STAGES.length;
+  const i=clamp(FLOW.i,0,n-1), lp=clamp(FLOW.p*n-i,0,1);
+  const aNext=clamp((lp-.74)/.26,0,1);
+  const cx=w*.5, cy=h*.5, L=Math.min(h*.36,w*.20), Wd=L*.60;
+
+  /* fondo: halo del color del paso activo */
+  const COL=['#ffc44d','#4ad9ff','#a97bff','#4dff9f'];
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cy,Math.min(w,h)*.46,COL[i],.09);
+  c.restore();
+
+  /* ── la hoja ── */
+  const cyL=cy-h*.02;
+  c.save();
+  c.globalAlpha=.92;
+  leafPath(c,cx,cyL,L,Wd,0);
+  c.fillStyle='rgba(9,26,20,.72)'; c.fill();
+  c.strokeStyle='rgba(77,255,159,.42)'; c.lineWidth=2; c.stroke();
+  /* nervadura central */
+  c.strokeStyle='rgba(77,255,159,.30)'; c.lineWidth=1.6;
+  c.beginPath(); c.moveTo(cx,cyL-L*.92); c.lineTo(cx,cyL+L*.92); c.stroke();
+  for(let v=-3;v<=3;v++){
+    if(!v) continue;
+    c.strokeStyle='rgba(77,255,159,.16)'; c.lineWidth=1;
+    c.beginPath();
+    c.moveTo(cx,cyL+v*L*.22);
+    c.quadraticCurveTo(cx+L*.22,cyL+v*L*.22+L*.05,
+      cx+L*.40,cyL+v*L*.22+L*.16);
+    c.stroke();
+    c.beginPath();
+    c.moveTo(cx,cyL+v*L*.22);
+    c.quadraticCurveTo(cx-L*.22,cyL+v*L*.22+L*.05,
+      cx-L*.40,cyL+v*L*.22+L*.16);
+    c.stroke();
+  }
+  c.restore();
+
+  /* ══ PASO 1 · la luz ══ */
+  c.save();
+  c.globalAlpha=1-aNext;
+  for(let k=0;k<7;k++){
+    const ph=((t*.55)+k/7)%1;
+    const fx=cx+(k%2?1:-1)*(L*.18+ (k*.11)*L*.5);
+    const fy=cyL-L*1.02+ph*(L*1.9);
+    c.save(); c.globalCompositeOperation='lighter';
+    c.globalAlpha=(1-Math.abs(ph-.5)*1.3)*.85;
+    c.strokeStyle='#ffc44d'; c.lineWidth=2.2; c.lineCap='round';
+    c.beginPath(); c.moveTo(fx,fy-16); c.lineTo(fx+2,fy); c.stroke();
+    c.restore();
+  }
+  /* la clorofila se enciende donde llega la luz */
+  for(let k=0;k<16;k++){
+    const px=cx+((k%4)-1.5)*L*.24+Math.sin(k*2.1)*L*.06;
+    const py=cyL+(((k/4)|0)-1.5)*L*.24;
+    const li=.5+.5*Math.sin(t*2.2-k*.55);
+    c.save(); c.globalCompositeOperation='lighter';
+    glow(c,px,py,L*.14,'#ffc44d',.10+li*.34);
+    c.restore();
+    c.fillStyle=rgba('#7dffc0',.30+li*.42);
+    c.beginPath(); c.ellipse(px,py,L*.058,L*.038,k*.5,0,TAU); c.fill();
+  }
+  tag(c,'LUZ',cx+L*.44,cyL-L*.42,'#ffc44d',1);
+  c.restore();
+
+  /* ══ PASO 2 · el CO₂ entra por los estomas ══ */
+  c.save();
+  c.globalAlpha=1-aNext;
+  const sy=cyL+L*.72;
+  for(let k=0;k<9;k++){
+    const ph=((t*.30)+k/9)%1;
+    const px=cx+Math.sin(k*1.7)*L*.42;
+    const py=sy+44-ph*52;
+    c.save();
+    c.globalAlpha=Math.sin(ph*Math.PI)*.9;
+    CO2m(c,px,py,6.4,t*.4+k,1);
+    c.restore();
+  }
+  /* los dos estomas, abriéndose */
+  const op=.5+.5*Math.sin(t*1.15);
+  for(const s of [-1,1]){
+    const ex=cx+s*L*.30;
+    c.strokeStyle=rgba('#4ad9ff',.8); c.lineWidth=2.4;
+    c.beginPath();
+    c.ellipse(ex,sy,5+op*4,9+op*6,s*.30,0,TAU);
+    c.stroke();
+  }
+  c.strokeStyle='rgba(74,217,255,.35)'; c.lineWidth=1.2; c.setLineDash([3,4]);
+  c.beginPath(); c.moveTo(cx-L*.42,sy+40); c.lineTo(cx-L*.06,sy+8); c.stroke();
+  c.setLineDash([]);
+  tag(c,'ESTOMAS',cx-L*.46,sy+34,'#4ad9ff',.95);
+  c.restore();
+
+  /* ══ PASO 3 · dentro del cloroplasto ══ */
+  c.save();
+  c.globalAlpha=1-aNext;
+  const px=cx-L*.30, py=cyL-L*.16, pw=L*1.02, phh=L*.62;
+  c.fillStyle='rgba(169,123,255,.10)';
+  c.strokeStyle='rgba(169,123,255,.55)'; c.lineWidth=1.8;
+  rrect(c,px,py,pw,phh,14); c.fill(); c.stroke();
+  /* las membranas apiladas del interior */
+  for(let k=0;k<4;k++){
+    c.fillStyle='rgba(169,123,255,.26)';
+    rrect(c,px+10+k*4,py+8+k*3,pw-20-k*8,5,2.5); c.fill();
+  }
+  txt(c,'CLOROPLASTO',px+pw/2,py-13,10.5,'#a97bff',800,true);
+  /* el carbonillo: CO2 que llega y se une al trio */
+  const ccx=px+pw*.72, ccy=py+phh*.62;
+  const lp2=(t*.5)%1;
+  c.save();
+  c.globalAlpha=1-lp2;
+  CO2m(c,ccx+lerp(52,10,ease(lp2)),ccy,7,t*.5,1);
+  c.restore();
+  const sp2=L*.10;
+  c.strokeStyle='rgba(77,255,159,.45)'; c.lineWidth=2;
+  c.beginPath();
+  for(let k=0;k<3;k++){
+    const a=lp2*TAU+k*TAU/3;
+    const ax=ccx+Math.cos(a)*sp2, ay=ccy+Math.sin(a)*sp2;
+    k?c.lineTo(ax,ay):c.moveTo(ax,ay);
+  }
+  c.closePath(); c.stroke();
+  for(let k=0;k<3;k++){
+    const a=lp2*TAU+k*TAU/3;
+    C(c,ccx+Math.cos(a)*sp2,ccy+Math.sin(a)*sp2,6.4,1);
+  }
+  tag(c,'3-PGA',ccx,ccy+sp2+18,'#4dff9f',.95);
+  c.restore();
+
+  /* ══ PASO 4 · los azúcares para crecer ══ */
+  c.save();
+  c.globalAlpha=1-aNext;
+  for(let k=0;k<10;k++){
+    const ph=((t*.26)+k/10)%1;
+    const a=k*2.39996;
+    const x0=cx+Math.cos(a)*L*.24, y0=cyL+Math.sin(a)*L*.30;
+    const x=lerp(x0,cx+Math.cos(a)*L*1.5,ph);
+    const y=lerp(y0,cyL+Math.sin(a)*L*1.1-ph*h*.30,ph);
+    c.save();
+    c.globalAlpha=Math.sin(ph*Math.PI)*.95;
+    ring(c,x,y,11.5,'#4dff9f',t*.3+k,.9);
+    c.restore();
+  }
+  /* el brote brotando abajo */
+  const gr=clamp((t*.5)%1,0,1);
+  const gx=cx, gy=cyL+L*1.28;
+  c.strokeStyle=rgba('#4dff9f',.85); c.lineWidth=3; c.lineCap='round';
+  c.beginPath();
+  c.moveTo(gx,gy); c.lineTo(gx,gy-26*ease(gr));
+  c.stroke();
+  c.beginPath();
+  c.ellipse(gx-11,gy-24*ease(gr)-3,10,5.4,-.5,0,TAU);
+  c.fillStyle=rgba('#4dff9f',.8); c.fill();
+  c.beginPath();
+  c.ellipse(gx+11,gy-24*ease(gr)-3,10,5.4,.5,0,TAU);
+  c.fillStyle=rgba('#4dff9f',.8); c.fill();
+  tag(c,'PARA CRECER',gx,gy+16,'#4dff9f',.95);
+  c.restore();
+
+  /* ── el número del paso, abajo a la izquierda ── */
+  c.save();
+  c.globalAlpha=.9;
+  txt(c,`${i+1} / ${n}`,w*.075,h*.90,12.5,COL[i],800,true);
+  txt(c,STAGES[i].e,w*.16,h*.90,20,COL[i],800,true);
+  c.restore();
+}});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   S3 · EL NÚCLEO: por qué se llaman C₃
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv3'),{fps:LOW?30:60,gate:['s3'],draw(c,w,h,t){
+  const cx=w*.5, cy=h*.5, R=Math.min(w*.20,h*.24,104);
+  const cyc=(t*.13)%1;
+  const eIn =ease(clamp(cyc/.34,0,1));
+  const eOut=ease(clamp((cyc-.80)/.20,0,1));
+  const sp=R*1.85;
+
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cy,R*2.4,'#4dff9f',.13);
+  c.restore();
+
+  /* el tres enorme, revelándose de izquierda a derecha */
+  const rp=ease(clamp(cyc/.52,0,1));
+  c.save();
+  c.beginPath();
+  c.rect(cx-R*1.25,cy-R*1.5,R*2.5*rp,R*3);
+  c.clip();
+  c.font=`800 ${R*2.5}px Inter,system-ui,sans-serif`;
+  c.textAlign='center'; c.textBaseline='middle';
+  const g3=c.createLinearGradient(cx,cy-R*1.2,cx,cy+R*1.2);
+  g3.addColorStop(0,'rgba(255,255,255,.13)');
+  g3.addColorStop(1,'rgba(77,255,159,.30)');
+  c.fillStyle=g3;
+  c.fillText('3',cx,cy);
+  c.restore();
+
+  /* los tres carbonos llegando y cerrando el triángulo */
+  const pos=(k)=>{
+    const a=-Math.PI/2+k*TAU/3+t*.16;
+    const d=sp*(1-eIn*.74);
+    return [cx+Math.cos(a)*d, cy+Math.sin(a)*d];
+  };
+  c.save();
+  c.globalAlpha=1-eOut;
+  c.strokeStyle=rgba('#4dff9f',.30+.5*eIn); c.lineWidth=2.6;
+  c.beginPath();
+  for(let k=0;k<3;k++){
+    const p=pos(k), q=pos((k+1)%3);
+    c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]);
+  }
+  c.closePath(); c.stroke();
+  for(let k=0;k<3;k++){
+    const p=pos(k);
+    c.save();
+    if(k===0) c.globalAlpha=.5+.5*Math.abs(Math.sin(t*4));
+    C(c,p[0],p[1],R*.30,1);
+    c.restore();
+  }
+  c.restore();
+
+  if(eIn>.5) tag(c,'3-PGA',cx,cy+sp+R*.42,'#4dff9f',clamp((eIn-.5)*4,0,1));
+  if(eIn>.62) tag(c,'PRIMER PRODUCTO ESTABLE',cx,cy+sp+R*.42+22,
+    'rgba(143,190,168,.9)',clamp((eIn-.62)*4,0,1));
+  txt(c,'EL NÚMERO VIENE DE AQUÍ',cx,cy-R*1.62,10.5,'rgba(143,190,168,.75)',800,true);
+}});
+
+/* ═══════════════════════════════════════════════════════════════
+   S4 · QUÉ LAS CARACTERIZA: temperatura moderada + agua
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv4'),{fps:LOW?30:60,gate:['s4'],draw(c,w,h,t){
+  /* la aguja recorre de "templado" a "muy caluroso" y vuelve */
+  const sw=.5+.5*Math.sin(t*.34);
+  const x0=w*.14, x1=w*.86, yAxis=h*.30;
+  const px=lerp(x0,x1,sw);
+  const sec=sw<.42;                    /* dentro o fuera de la zona buena */
+  const lab=sec?'FUNCIONA BIEN':'BAJA EL RENDIMIENTO';
+  const col=sec?'#4dff9f':'#ffc44d';
+
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,px,yAxis,h*.22,col,.20);
+  c.restore();
+
+  /* el eje */
+  c.strokeStyle='rgba(255,255,255,.16)'; c.lineWidth=3; c.lineCap='round';
+  c.beginPath(); c.moveTo(x0,yAxis); c.lineTo(x1,yAxis); c.stroke();
+  c.lineCap='butt';
+
+  /* la zona templada, en verde */
+  const zx0=x0+(x1-x0)*.06, zx1=x0+(x1-x0)*.40;
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,(zx0+zx1)/2,yAxis,h*.09,'#4dff9f',.20);
+  c.restore();
+  c.strokeStyle='rgba(77,255,159,.75)'; c.lineWidth=3.4; c.lineCap='round';
+  c.beginPath(); c.moveTo(zx0,yAxis); c.lineTo(zx1,yAxis); c.stroke();
+  c.lineCap='butt';
+
+  /* la marca de la temperatura */
+  c.save();
+  c.fillStyle=col;
+  c.beginPath();
+  c.moveTo(px,yAxis-30); c.lineTo(px-9,yAxis-14); c.lineTo(px+9,yAxis-14);
+  c.closePath(); c.fill();
+  c.restore();
+  tag(c,sec?'TEMPERATURA MODERADA':'MUCHO CALOR',px,yAxis-46,col,1);
+
+  /* los dos medidores que el texto menciona */
+  const gauges=[
+    ['ENTRADA DE CO₂',sec?.92:.34,lerp(.92,.34,clamp((sw-.42)/.34,0,1))],
+    ['EFICIENCIA FOTOSINTÉTICA',sec?.88:.30,lerp(.88,.30,clamp((sw-.42)/.34,0,1))]
+  ];
+  const gy=h*.58, gh=h*.26;
+  gauges.forEach(([name,_,val],k)=>{
+    const yy=gy+k*(gh*.62);
+    txt(c,name,x0,yy,10.5,'rgba(143,163,173,.9)',800,true,'left');
+    c.fillStyle='rgba(255,255,255,.07)';
+    rrect(c,x0,yy+10,x1-x0,9,5); c.fill();
+    const bw=(x1-x0)*clamp(val,0,1);
+    c.fillStyle=sec?'#4dff9f':'#ffc44d';
+    rrect(c,x0,yy+10,bw,9,5); c.fill();
+  });
+
+  /* el agua: baja cuando sube el calor */
+  const wy=h*.885;
+  txt(c,'AGUA',x0,wy,10.5,'rgba(143,163,173,.9)',800,true,'left');
+  c.fillStyle='rgba(255,255,255,.07)';
+  rrect(c,x0,wy+10,x1-x0,9,5); c.fill();
+  const wat=lerp(.95,.22,clamp((sw-.36)/.40,0,1));
+  c.fillStyle=wat>.5?'#4ad9ff':'#ff5f8f';
+  rrect(c,x0,wy+10,(x1-x0)*wat,9,5); c.fill();
+
+  txt(c,lab,(x0+x1)/2,wy+44,11.5,col,800,true);
+}});
+
+/* ═══════════════════════════════════════════════════════════════
+   S6 · DATO CURIOSO: un campo y casi todo es C₃
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv5'),{fps:LOW?30:60,gate:['s6'],
+  resize(w,h){
+    this.plants=[];
+    const cols=Math.max(6,Math.round(w/62)), rows=5;
+    for(let r=0;r<rows;r++) for(let cI=0;cI<cols;cI++){
+      /* casi todas C₃: unas pocas se quedan apagadas */
+      const odd=((r*cols+cI)*7)%11===0;
+      this.plants.push({r,cI,odd,ph:(r*cols+cI)*.37,oddPh:odd?(r*cols+cI)*.9:0});
+    }
+  },
+  draw(c,w,h,t){
+  const P=this.plants||[];
+  const cols=Math.max(6,Math.round(w/62));
+  const cw=w/cols, ch=Math.min(h/(P.length/cols),74);
+  const top=(h-P.length/cols*ch)/2;
+
+  for(const p of P){
+    const x=cw*(p.cI+.5), y=top+ch*(p.r+.5);
+    const on=!p.odd, lit=clamp(((t*.34+p.ph)%1)*1.9,0,1);
+    const col=on?'#4dff9f':'#3d5a66';
+    /* el tallo */
+    c.strokeStyle=rgba(col,.55); c.lineWidth=1.8; c.lineCap='round';
+    c.beginPath();
+    c.moveTo(x,y+ch*.30);
+    c.lineTo(x,y-ch*.02*lit);
+    c.stroke();
+    c.lineCap='butt';
+    /* las dos hojas */
+    c.fillStyle=rgba(col,.75);
+    c.beginPath();
+    c.ellipse(x-ch*.15,y-ch*.10*lit,ch*.19,ch*.09,-.5,0,TAU); c.fill();
+    c.beginPath();
+    c.ellipse(x+ch*.15,y-ch*.10*lit,ch*.19,ch*.09,.5,0,TAU); c.fill();
+    /* la marca C₃ en las que lo son */
+    if(on){
+      const li=.55+.45*Math.sin(t*1.6+p.ph);
+      c.save(); c.globalCompositeOperation='lighter';
+      glow(c,x,y,ch*.30,'#4dff9f',.05+li*.14);
+      c.restore();
+      txt(c,'C₃',x,y+ch*.44,10.5,
+        rgba('#4dff9f',.5+li*.5),800,true);
+    }
+  }
+  /* el rótulo */
+  txt(c,'LA MAYORÍA DEL CAMPO',w*.5,h*.965,10.5,'rgba(143,190,168,.8)',800,true);
+}});
+
+/* ═══════════════════════════════════════════════════════════════
+   S7 · CIERRE: tres carbonos en órbita lenta
+   ═══════════════════════════════════════════════════════════════ */
+scene($('#cv6'),{fps:LOW?30:60,gate:['s7'],draw(c,w,h,t){
+  const cx=w*.5, cy=h*.5, R=Math.min(w*.26,h*.30,240);
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cy,R*1.5,'#4dff9f',.11);
+  c.restore();
+
+  c.strokeStyle='rgba(77,255,159,.16)'; c.lineWidth=1.6;
+  c.setLineDash([6,10]); c.lineDashOffset=-t*11;
+  c.beginPath(); c.arc(cx,cy,R*.66,0,TAU); c.stroke();
+  c.setLineDash([]);
+
+  for(let k=0;k<3;k++){
+    const a=t*.34+k*TAU/3;
+    const x=cx+Math.cos(a)*R*.66, y=cy+Math.sin(a)*R*.66;
+    c.save(); c.globalCompositeOperation='lighter';
+    glow(c,x,y,R*.14,'#4dff9f',.20);
+    c.restore();
+    C(c,x,y,R*.052,1);
+  }
+}});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOTOR DE SCROLL: barra, índice, sección activa y los cuatro pasos
+   ═══════════════════════════════════════════════════════════════ */
+const Phase={cur:'s0'};
+const SECTIONS=$$('main section');
+const IDX=$('#idx'), BAR=$('#bar');
+const NAMES={s0:'Portada',s1:'Qué es',s2:'Cómo funciona',s3:'Por qué C₃',
+  s4:'Qué las caracteriza',s5:'Ejemplo de cultivo',s6:'Dato curioso',s7:'En una línea'};
+
+SECTIONS.forEach(s=>{
+  const b=document.createElement('button');
+  b.type='button';
+  b.dataset.t=NAMES[s.id]||s.id;
+  b.setAttribute('aria-label','Ir a '+b.dataset.t);
+  b.innerHTML='<i></i>';
+  b.addEventListener('click',()=>s.scrollIntoView({behavior:RM?'auto':'smooth'}));
+  IDX.appendChild(b);
+});
+const dots=$$('#idx button');
+
+/* los cuatro pasos: markup una vez, luego solo clases */
+const SB=$('#stepbox'), TL=$('#tl');
+STAGES.forEach((st,i)=>{
+  const p=document.createElement('div');
+  p.className='fstep';
+  p.innerHTML=`<span class="k"><b aria-hidden="true">${st.e}</b>${st.k}</span>
+    <h3>${st.t}</h3><p>${st.p}</p><div class="why">${st.w}</div>`;
+  SB.appendChild(p);
+  const b=document.createElement('button');
+  b.type='button'; b.textContent=st.k;
+  b.setAttribute('role','tab');
+  b.setAttribute('aria-label',st.t);
+  b.addEventListener('click',()=>{
+    const el=$('#s2'), r=el.getBoundingClientRect();
+    const tot=r.height-innerHeight;
+    scrollTo({top:scrollY+r.top+tot*((i+.5)/STAGES.length),
+      behavior:RM?'auto':'smooth'});
+  });
+  TL.appendChild(b);
+});
+const fsteps=$$('.fstep',SB), tlbs=$$('button',TL);
+
+let queued=false, curSec='', curStep=-1;
+function onScroll(){
+  const max=document.body.scrollHeight-innerHeight;
+  BAR.style.width=(max>0?scrollY/max*100:0)+'%';
+  if(queued) return;
+  queued=true;
+  requestAnimationFrame(()=>{
+    queued=false;
+    /* sección activa: la más centrada */
+    let best=SECTIONS[0],bd=1e9;
+    for(const s of SECTIONS){
+      const d=Math.abs(s.getBoundingClientRect().top+innerHeight*.3);
+      if(d<bd){bd=d;best=s;}
+    }
+    if(best.id!==curSec){
+      curSec=best.id; Phase.cur=best.id;
+      dots.forEach((b,i)=>{
+        const on=SECTIONS[i].id===best.id;
+        b.classList.toggle('on',on);
+        b.setAttribute('aria-current',on?'true':'false');
+      });
+    }
+    /* los cuatro pasos, según la posición dentro de la sección */
+    const s2=$('#s2'), r=s2.getBoundingClientRect();
+    const tot=Math.max(1,r.height-innerHeight);
+    FLOW.p=clamp(-r.top/tot,0,1);
+    FLOW.i=Math.min(STAGES.length-1,Math.floor(FLOW.p*STAGES.length));
+    if(FLOW.i!==curStep){
+      curStep=FLOW.i;
+      fsteps.forEach((f,i)=>f.classList.toggle('on',i===curStep));
+      tlbs.forEach((b,i)=>{
+        b.classList.toggle('on',i===curStep);
+        b.classList.toggle('done',i<curStep);
+        b.setAttribute('aria-selected',i===curStep?'true':'false');
+      });
+    }
+  });
+}
+addEventListener('scroll',onScroll,{passive:true});
+addEventListener('resize',onScroll,{passive:true});
+onScroll();
+
+/* ═══════════════════════════════════════════════════════════════
+   TECLADO Y PUNTERO
+   ═══════════════════════════════════════════════════════════════ */
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const tg=e.target&&e.target.tagName;
+  if(tg==='INPUT'||tg==='TEXTAREA'||(e.target&&e.target.isContentEditable)) return;
+  let to=-1;
+  const i=Math.max(0,SECTIONS.findIndex(s=>s.id===curSec));
+  if(e.key==='ArrowDown'||e.key==='PageDown'||e.key==='j') to=i+1;
+  else if(e.key==='ArrowUp'||e.key==='PageUp'||e.key==='k') to=i-1;
+  else if(e.key==='Home') to=0;
+  else if(e.key==='End') to=SECTIONS.length-1;
+  if(to<0) return;
+  e.preventDefault();
+  SECTIONS[clamp(to,0,SECTIONS.length-1)]
+    .scrollIntoView({behavior:RM?'auto':'smooth'});
+});
+
+if(!RM&&matchMedia('(hover:hover)').matches){
+  const root=document.documentElement, halo=$('#halo');
+  let raf=0,px=0,py=0;
+  const put=()=>{
+    raf=0;
+    root.style.setProperty('--mx',px+'px');
+    root.style.setProperty('--my',py+'px');
+    halo.style.opacity=1;
+  };
+  addEventListener('pointermove',e=>{
+    px=e.clientX; py=e.clientY;
+    if(!raf) raf=requestAnimationFrame(put);
+  },{passive:true});
+}
+
+/* la flecha de la portada se apaga al empezar */
+addEventListener('scroll',()=>{
+  const cue=$('.scrollcue');
+  if(cue) cue.style.opacity=scrollY>40?'0':'1';
+},{passive:true});
+
+kick();
+</script>
+</body>
+</html>
+
