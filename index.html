@@ -991,6 +991,137 @@ function vignette(c,w,h,a){
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   DETALLE: ESTRUCTURAS Y CÉLULAS
+   ═══════════════════════════════════════════════════════════════ */
+/* Lienzo auxiliar: lo que no cambia se dibuja una vez y se reutiliza */
+function staticCanvas(W,H,fn,scale){
+  scale=scale||1;
+  const cv=document.createElement('canvas');
+  cv.width=Math.max(1,Math.round(W*scale));
+  cv.height=Math.max(1,Math.round(H*scale));
+  const c=cv.getContext('2d');
+  c.setTransform(scale,0,0,scale,0,0);
+  fn(c,W,H);
+  return cv;
+}
+/* Grano de película: quita el aspecto plano y da cuerpo de imagen real */
+let GRAIN=null;
+function grain(c,w,h,t,amt){
+  if(LOW||amt<=0) return;
+  const n=512;
+  if(!GRAIN){
+    const cv=document.createElement('canvas');
+    cv.width=cv.height=n;
+    const g=cv.getContext('2d'), d=g.createImageData(n,n);
+    for(let i=0;i<n*n;i++){
+      const v=(Math.random()*.5+.5)*255;
+      d.data[i*4]=d.data[i*4+1]=d.data[i*4+2]=v;
+      d.data[i*4+3]=255;
+    }
+    g.putImageData(d,0,0);
+    GRAIN=cv;
+  }
+  c.save();
+  c.globalAlpha=amt;
+  c.globalCompositeOperation='overlay';
+  const ox=-((t*29)%n), oy=-((t*41)%n);
+  for(let y=oy;y<h+n;y+=n) for(let x=ox;x<w+n;x+=n) c.drawImage(GRAIN,x,y);
+  c.restore();
+}
+/* Cloroplasto: envoltura ovalada con la grana apilada dentro */
+function chloroplast(c,x,y,r,rot,lite=1){
+  c.save(); c.translate(x,y); c.rotate(rot); c.globalAlpha*=lite;
+  const g=c.createLinearGradient(0,-r*.55,0,r*.55);
+  g.addColorStop(0,'rgba(150,255,205,.95)');
+  g.addColorStop(.5,'rgba(26,150,102,.95)');
+  g.addColorStop(1,'rgba(6,64,46,.95)');
+  c.fillStyle=g;
+  c.beginPath(); c.ellipse(0,0,r,r*.55,0,0,TAU); c.fill();
+  c.strokeStyle='rgba(200,255,228,.5)'; c.lineWidth=1; c.stroke();
+  c.fillStyle='rgba(4,44,34,.5)';
+  for(let i=0;i<4;i++){
+    const gx=-r*.66+i*r*.44, gw=r*.30, gh=r*.34;
+    for(let k=0;k<4;k++){ rrect(c,gx-gw/2,-gh*.5+k*gh*.34,gw,gh*.22,gh*.10); c.fill(); }
+  }
+  c.restore();
+}
+/* Núcleo dentro de la célula */
+function nucleus(c,x,y,r,a=1){
+  c.save(); c.globalAlpha*=Math.min(1,a);
+  const g=c.createRadialGradient(x-r*.3,y-r*.3,r*.1,x,y,r);
+  g.addColorStop(0,'rgba(198,220,255,.92)');
+  g.addColorStop(.6,'rgba(96,126,206,.8)');
+  g.addColorStop(1,'rgba(22,38,84,.72)');
+  c.fillStyle=g;
+  c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+  c.fillStyle='rgba(235,243,255,.8)';
+  c.beginPath(); c.arc(x+r*.14,y+r*.06,r*.26,0,TAU); c.fill();
+  c.restore();
+}
+/* Microfibrilas de celulosa: los arcos que abren la célula guardián */
+function fibrils(c,x,y,rx,ry,ang,n,col,a){
+  c.save(); c.translate(x,y); c.rotate(ang);
+  c.strokeStyle=rgba(col,a); c.lineWidth=1;
+  for(let i=0;i<n;i++){
+    c.beginPath();
+    c.ellipse(0,0,rx*(1-i/n*.55),ry*(1-i/n*.55),0,Math.PI*.12,Math.PI*.88);
+    c.stroke();
+  }
+  c.restore();
+}
+/* Tricoma: el pelito del borde de la hoja */
+function trichome(c,x,y,ang,len,col,a){
+  c.save(); c.translate(x,y); c.rotate(ang);
+  c.strokeStyle=rgba(col,a); c.lineWidth=1.1; c.lineCap='round';
+  c.beginPath(); c.moveTo(0,0);
+  c.quadraticCurveTo(len*.45,-len*.20,len,0); c.stroke();
+  c.fillStyle=rgba(col,a*.85);
+  c.beginPath(); c.arc(len,0,1.4,0,TAU); c.fill();
+  c.restore();
+}
+/* Anillo de glucosa: el hexágono con sus vértomos marcados */
+function hexose(c,x,y,r,col,t,a=1){
+  c.save(); c.translate(x,y); c.rotate(t); c.globalAlpha*=a;
+  const P=[];
+  for(let i=0;i<6;i++){
+    const an=i*TAU/6-Math.PI/2;
+    P.push([Math.cos(an)*r,Math.sin(an)*r]);
+  }
+  c.beginPath();
+  P.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));
+  c.closePath();
+  c.fillStyle=rgba(col,.12); c.fill();
+  c.strokeStyle=rgba(col,.95); c.lineWidth=2; c.stroke();
+  c.fillStyle=rgba(col,.92);
+  for(let i=0;i<6;i++){ c.beginPath(); c.arc(P[i][0],P[i][1],r*.11,0,TAU); c.fill(); }
+  c.restore();
+}
+/* Proteína del ciclo: dos lóbulos con la hendidura donde entra el CO₂ */
+function enzyme(c,x,y,r,ang,t,a=1){
+  c.save(); c.translate(x,y); c.rotate(ang+Math.sin(t*.8)*.12);
+  c.globalAlpha*=a;
+  const g=c.createRadialGradient(-r*.3,-r*.3,r*.1,0,0,r);
+  g.addColorStop(0,'rgba(230,212,255,.95)');
+  g.addColorStop(.6,'rgba(152,112,222,.85)');
+  g.addColorStop(1,'rgba(58,30,108,.7)');
+  c.fillStyle=g;
+  c.beginPath(); c.ellipse(-r*.24,0,r*.70,r*.84,0,0,TAU); c.fill();
+  c.beginPath(); c.ellipse(r*.44,r*.14,r*.54,r*.60,0,0,TAU); c.fill();
+  c.fillStyle='rgba(18,8,44,.78)';
+  c.beginPath(); c.ellipse(r*.06,0,r*.15,r*.32,0,0,TAU); c.fill();
+  c.restore();
+}
+/* Doble membrana del cloroplasto */
+function envelope(c,w,h,col,a){
+  c.save();
+  c.strokeStyle=rgba(col,a*.40); c.lineWidth=8;
+  c.beginPath(); c.ellipse(w*.5,h*.5,w*.58,h*.66,0,0,TAU); c.stroke();
+  c.strokeStyle=rgba(col,a); c.lineWidth=1.8;
+  c.beginPath(); c.ellipse(w*.5,h*.5,w*.58,h*.66,0,0,TAU); c.stroke();
+  c.restore();
+}
+
+/* ═══════════════════════════════════════════════════════════════
    FONDO VIVO
    ═══════════════════════════════════════════════════════════════ */
 scene($('#bg'),{alpha:false,bloom:true,draw(c,w,h,t){
@@ -1192,120 +1323,239 @@ const FLOW={i:0,p:0};
 /* el área donde se compone la acción: a la derecha, libre del texto */
 function area(w){ return {x0:w*.42, x1:w*.965, cx:w*.705}; }
 
-/* silueta de hoja, apuntando a la derecha */
-function leafShape(c,cx,cy,L,Wd,rot){
-  c.save(); c.translate(cx,cy); c.rotate(rot);
-  c.beginPath();
-  c.moveTo(0,-L);
-  c.bezierCurveTo( Wd*1.10,-L*.58,  Wd*.92, L*.52,  0, L);
-  c.bezierCurveTo(-Wd*.92, L*.52, -Wd*1.10,-L*.58, 0,-L);
-  c.closePath();
-  c.restore();
+/* ── la hoja ─────────────────────────────────────────────────── */
+function leafPath(L,Wd){
+  const p=new Path2D();
+  p.moveTo(0,-L);
+  p.bezierCurveTo( Wd*1.10,-L*.58,  Wd*.92, L*.52,  0, L);
+  p.bezierCurveTo(-Wd*.92, L*.52, -Wd*1.10,-L*.58, 0,-L);
+  p.closePath();
+  return p;
 }
-
-/* ══ ESCENA 1 · LA CLOROFILA CAPTURA LA LUZ ══ */
-function escLuz(c,w,h,t,A){
-  wash(c,w,h,['#052a20','#04202a','#020809'],null);
-  /* haces de sol entrando por arriba a la izquierda */
-  rays(c,-w*.06,-h*.16,.78,.62,Math.max(w,h)*1.55,'#ffc44d',t,8,0);
-  motes(c,w,h,t,Math.round(w/16)*CAP,['#ffd98a','#9ff0d0'],1);
-
-  const {cx}=area(w);
-  const cyL=h*.80, L=Math.min(h*.62,w*.34), Wd=L*.56, rot=-.20;
-
-  /* la hoja, con volumen: del lado del sol, verde vivo */
+function bezPt(p0,p1,p2,p3,t){
+  const u=1-t;
+  return u*u*u*p0+3*u*u*t*p1+3*u*t*t*p2+t*t*t*p3;
+}
+/* dientes del borde: se muestrean las dos curvas y se levantan normale */
+function serrate(c,L,Wd,col,a){
   c.save();
-  leafShape(c,cx,cyL,L,Wd,rot);
-  const g=c.createLinearGradient(cx-L*.7,cyL-L,cx+L*.6,cyL+L);
-  g.addColorStop(0,'#1c6b48');
-  g.addColorStop(.42,'#0f4634');
-  g.addColorStop(1,'#052018');
-  c.fillStyle=g; c.fill();
-  c.clip();
-  /* nervadura central y secundarias */
-  c.save(); c.rotate(rot);
-  c.strokeStyle='rgba(150,255,205,.30)'; c.lineWidth=2.6;
-  c.beginPath(); c.moveTo(-L,0); c.lineTo(L,0); c.stroke();
-  for(let v=-7;v<=7;v++){
-    if(!v) continue;
-    const bx=v*L*.128, len=L*.30*(1-Math.abs(v)/9);
-    c.strokeStyle='rgba(140,240,195,.16)'; c.lineWidth=1.5;
-    for(const s of [-1,1]){
+  c.strokeStyle=rgba(col,a); c.lineWidth=1.5; c.lineCap='round';
+  for(const s of [1,-1]){
+    for(let i=1;i<26;i++){
+      const u=i/26;
+      const x=bezPt(0,Wd*1.10*s,Wd*.92*s,0,u);
+      const y=bezPt(-L,-L*.58,L*.52,L,u);
+      const x2=bezPt(0,Wd*1.10*s,Wd*.92*s,0,u+.02);
+      const y2=bezPt(-L,-L*.58,L*.52,L,u+.02);
+      const dx=x2-x, dy=y2-y, m=Math.hypot(dx,dy)||1;
+      const nx=dy/m*s, ny=-dx/m*s;
       c.beginPath();
-      c.moveTo(bx,0);
-      c.quadraticCurveTo(bx+s*len*.55,-len*.42, bx+s*len,-len*.66);
+      c.moveTo(x,y); c.lineTo(x+nx*7, y+ny*7);
       c.stroke();
     }
   }
   c.restore();
-  /* los puntos de clorofila, que se encienden al recibir luz */
-  for(let i=0;i<30;i++){
-    const a=i*2.39996;
-    const px=Math.cos(a)*Wd*.86, py=Math.sin(a)*L*.78;
-    const lit=Math.max(0,Math.sin(t*1.5-i*.42));
-    c.save(); c.globalCompositeOperation='lighter';
-    glow(c,cx+px,cyL+py,20,'#7dffc0',.05+lit*.30);
+}
+/* la hoja entera, horneada una vez: cuerpo, células, nervadura y borde */
+function bakeLeaf(L,Wd){
+  const S=Math.ceil(L*2.5);
+  return staticCanvas(S,S,c=>{
+    c.translate(S/2,S/2);
+    const p=leafPath(L,Wd);
+    /* el cuerpo, con volumen */
+    c.save();
+    c.fillStyle=(()=>{
+      const g=c.createLinearGradient(-L,-L,L*.6,L);
+      g.addColorStop(0,'#2a8a5b'); g.addColorStop(.34,'#146046');
+      g.addColorStop(.72,'#0a3628'); g.addColorStop(1,'#04201a');
+      return g;
+    })();
+    c.fill(p);
+    c.clip(p);
+    /* mosaico de células de la epidermis */
+    const step=Math.max(9,L*.028);
+    c.lineWidth=.9;
+    for(let y=-L;y<L;y+=step) for(let x=-L*1.1;x<L*1.1;x+=step){
+      const px=x+(((y/step)|0)%2?step*.5:0), py=y;
+      if(!c.isPointInPath(p,px,py)) continue;
+      c.fillStyle='rgba(180,255,215,.035)';
+      c.strokeStyle='rgba(190,255,220,.10)';
+      rrect(c,px-step*.46,py-step*.46,step*.92,step*.92,step*.30);
+      c.fill(); c.stroke();
+    }
+    /* nervadura central */
+    c.strokeStyle='rgba(190,255,220,.42)'; c.lineWidth=3.2;
+    c.beginPath(); c.moveTo(0,-L*.98); c.lineTo(0,L*.97); c.stroke();
+    c.strokeStyle='rgba(190,255,220,.16)'; c.lineWidth=1.6;
+    c.beginPath(); c.moveTo(0,-L*.98); c.lineTo(0,L*.97); c.stroke();
+    /* nervaduras secundarias y terciarias */
+    for(let v=1;v<=9;v++){
+      const y0=-L*.86+v*L*.185, reach=L*.30*(1-Math.abs(v-5)/7);
+      for(const s of [1,-1]){
+        c.strokeStyle='rgba(160,245,205,.20)'; c.lineWidth=1.5;
+        c.beginPath(); c.moveTo(0,y0);
+        c.quadraticCurveTo(s*reach*.55,y0-reach*.10, s*reach,y0-reach*.26);
+        c.stroke();
+        c.strokeStyle='rgba(160,245,205,.10)'; c.lineWidth=.9;
+        for(let q=1;q<=3;q++){
+          const u=q/4;
+          const bx=bezPt(0,s*reach*.55,s*reach,0,u);
+          const by=bezPt(y0,y0-reach*.10,y0-reach*.26,y0-reach*.26,u);
+          c.beginPath(); c.moveTo(bx,by); c.lineTo(bx+s*7,by-4); c.stroke();
+          c.beginPath(); c.moveTo(bx,by); c.lineTo(bx-s*4,by+5); c.stroke();
+        }
+      }
+    }
     c.restore();
-    c.fillStyle=rgba('#8dffc6',.20+lit*.55);
-    c.beginPath(); c.ellipse(cx+px,cyL+py,6.5,4.2,a,0,TAU); c.fill();
+    /* el borde aserrado y el brillo de la cutícula */
+    serrate(c,L,Wd,'rgba(210,255,230,.34)');
+    c.save();
+    c.strokeStyle='rgba(200,255,225,.40)'; c.lineWidth=2.2; c.stroke(p);
+    c.restore();
+    c.save();
+    c.globalCompositeOperation='lighter';
+    c.fillStyle=(()=>{
+      const g=c.createLinearGradient(-L,-L,-L*.1,L*.2);
+      g.addColorStop(0,'rgba(190,255,225,.20)'); g.addColorStop(1,'rgba(190,255,225,0)');
+      return g;
+    })();
+    c.fill(p);
+    c.restore();
+  });
+}
+
+/* ── escena 1 · la clorofila captura la luz ───────────────────── */
+function escLuz(c,w,h,t,A,Ly,st){
+  wash(c,w,h,['#062a20','#04202a','#020809']);
+  rays(c,-w*.06,-h*.16,.78,.62,Math.max(w,h)*1.55,'#ffc44d',t,8,0);
+  /* el sol */
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,-w*.02,-h*.04,h*.46,'#fff0c4',.26);
+  glow(c,-w*.02,-h*.04,h*.14,'#ffffff',.22);
+  c.restore();
+  motes(c,w,h,t,Math.round(w/16)*CAP,['#ffd98a','#9ff0d0'],1);
+
+  const P=area(w), cx=P.cx, cyL=h*.78;
+  const L=Math.min(h*.60,w*.32), Wd=L*.56;
+  const th=-.20+Math.sin(t*.32)*.022+Math.sin(t*.71)*.010;
+  const co=Math.cos(th), si=Math.sin(th);
+  const S=st.leaf.width;
+  /* un cloroplasto en coordenadas de la hoja */
+  const cp=(k,lite,rot)=>{
+    const a=k*2.39996, px=Math.cos(a)*Wd*.84, py=Math.sin(a)*L*.76;
+    chloroplast(c,px,py,L*.085,rot,lite);
+  };
+
+  c.save();
+  c.globalAlpha=A;
+  /* la sombra de la hoja sobre el fondo */
+  c.save();
+  c.globalAlpha=A*.30;
+  c.filter='blur(18px)';
+  c.translate(cx+L*.05,cyL+L*.10); c.rotate(th+.10);
+  c.drawImage(st.leaf,-S/2,-S/2,S,S);
+  c.filter='none';
+  c.restore();
+  /* la hoja */
+  c.translate(cx,cyL); c.rotate(th);
+  c.drawImage(st.leaf,-S/2,-S/2,S,S);
+  /* los tricomas del borde */
+  for(let k=0;k<7;k++){
+    const a=k*1.9;
+    trichome(c,Math.cos(a)*Wd*1.02,Math.sin(a)*L*.98,
+      a+Math.PI/2,L*.05,'rgba(200,255,225,.5)',1);
+  }
+  /* los cloroplastos: se encienden al recibir la luz */
+  for(let k=0;k<16;k++){
+    const lit=Math.max(0,Math.sin(t*1.5-k*.42));
+    cp(k,.20+lit*.75,k*.7);
   }
   c.restore();
-  /* borde de la hoja iluminado */
-  c.save();
-  leafShape(c,cx,cyL,L,Wd,rot);
-  c.strokeStyle='rgba(190,255,220,.42)'; c.lineWidth=2.2; c.stroke();
-  c.restore();
 
-  /* los fotones cayendo y el onda que levanta al tocar */
+  /* los fotones cayendo y la onda que levantan al tocar */
   for(let k=0;k<9;k++){
     const f=k/8;
-    const ix=cx+lerp(-L*.92,L*.86,f);
-    const iy=cyL+Math.sin(rot)*0+L*.60;
+    const ix=lerp(-L*.92,L*.86,f), iy=L*.60;
+    const X=cx+ix*co-iy*si, Y=cyL+ix*si+iy*co;
     const ph=(t*.34+k*.11)%1;
-    const y=lerp(-h*.10,iy,ph);
+    const y=lerp(-h*.10,Y,ph);
     c.save(); c.globalCompositeOperation='lighter';
-    c.globalAlpha=clamp(ph*4,0,1)*.9;
+    c.globalAlpha=clamp(ph*4,0,1)*A*.9;
     c.strokeStyle='#ffd98a'; c.lineWidth=2.4; c.lineCap='round';
-    c.beginPath(); c.moveTo(ix,y-30); c.lineTo(ix,y); c.stroke();
+    c.beginPath(); c.moveTo(X,y-30); c.lineTo(X,y); c.stroke();
     c.restore();
-    /* el impacto */
     if(ph>.80){
       const q=(ph-.80)/.20;
       c.save(); c.globalCompositeOperation='lighter';
-      c.globalAlpha=(1-q)*.8;
+      c.globalAlpha=(1-q)*A*.8;
       c.strokeStyle='#ffd98a'; c.lineWidth=2*(1-q)+.4;
-      c.beginPath(); c.arc(ix,iy,q*64,0,TAU); c.stroke();
-      glow(c,ix,iy,44*(1-q*.5),'#ffd98a',.30*(1-q));
+      c.beginPath(); c.arc(X,Y,q*64,0,TAU); c.stroke();
+      glow(c,X,Y,44*(1-q*.5),'#ffd98a',.30*(1-q));
       c.restore();
     }
   }
-  tag(c,'LUZ',cx+L*.66,cyL-L*.30,'#ffc44d',.9);
+  tag(c,'LUZ',cx+L*.66,cyL-L*.30,'#ffc44d',A*.9);
   vignette(c,w,h,.55);
+  grain(c,w,h,t,.055);
 }
 
-/* ══ ESCENA 2 · EL CO₂ ENTRA POR LOS ESTOMAS ══ */
-function escCO2(c,w,h,t,A,L){
-  wash(c,w,h,['#04141f','#031018','#02070c'],null);
+/* ── la epidermis, horneada con núcleo, cloroplastos y cutícula ── */
+function epiSheet(c,x,y,w,h,cols,rows,col,al,skip){
+  const cw=w/cols, ch=h/rows;
+  for(let r=0;r<rows;r++) for(let k=0;k<cols;k++){
+    const px=x+cw*(k+.5)+(r%2?cw*.5:0), py=y+ch*(r+.5);
+    if(skip&&skip(px,py)) continue;
+    const rad=Math.min(cw,ch)*.34;
+    c.lineWidth=1.7;
+    c.strokeStyle=rgba(col,al*(.40+.22*Math.abs(Math.sin(k*1.3+r*.7))));
+    c.fillStyle=rgba(col,al*.10);
+    rrect(c,px-cw*.5+2,py-ch*.5+2,cw-4,ch-4,rad);
+    c.fill(); c.stroke();
+    /* el citoplasma, apenas un velo */
+    c.fillStyle=rgba(col,al*.06);
+    c.beginPath(); c.ellipse(px,py,cw*.34,ch*.32,0,0,TAU); c.fill();
+    /* los cloroplastos, en la mayoría de las células */
+    const nch=1+((k*7+r*3)%3);
+    for(let q=0;q<nch;q++){
+      const sd=((k*13+r*5+q*29)%17)/17;
+      chloroplast(c,px+cw*(sd-.5)*.66,py+ch*(sd-.42)*.5,
+        Math.min(cw,ch)*.15,q*.9+sd,al*1.1);
+    }
+    nucleus(c,px-cw*.13,py-ch*.11,Math.min(cw,ch)*.10,al*1.6);
+  }
+  /* la cutícula, la franja que da brillo a la cara externa */
+  const cg=c.createLinearGradient(0,y,0,y+ch*.5);
+  cg.addColorStop(0,rgba(col,al*.5)); cg.addColorStop(1,rgba(col,0));
+  c.fillStyle=cg; c.fillRect(x,y,w,ch*.5);
+}
+function bakeEpi(w,h,sy,col){
+  return staticCanvas(w,h,c=>{
+    epiSheet(c,-40,-h*.12,w+80,h*.44,11,3,col,.55);
+    epiSheet(c,-40,sy,w+80,h*.42,11,3,col,.55,
+      (px,py)=>Math.abs(px-w*.705)<86 && Math.abs(py-sy-6)<46);
+  });
+}
+
+/* ── escena 2 · el CO₂ entra por los estomas ──────────────────── */
+function escCO2(c,w,h,t,A,Ly,st){
+  wash(c,w,h,['#04141f','#031018','#02070c']);
 
   /* el interior de la hoja, al fondo y desenfocado */
-  L.setTransform(1,0,0,1,0,0);
-  L.clearRect(0,0,L.canvas.width,L.canvas.height);
-  L.setTransform(.30,0,0,.30,0,0);
-  cellField(L,-40,h*.16,w+80,h*.70,11,5,3,'#2f8f7c',.34);
-  composite(c,L,w,h,5,.62);
+  Ly.setTransform(1,0,0,1,0,0);
+  Ly.clearRect(0,0,Ly.canvas.width,Ly.canvas.height);
+  Ly.setTransform(.30,0,0,.30,0,0);
+  epiSheet(Ly,-40,h*.20,w+80,h*.60,9,4,'#2f8f7c',.34);
+  composite(c,Ly,w,h,5,.60);
 
-  /* epidermis superior, nítida */
-  cellField(c,-40,-h*.10,w+80,h*.34,11,3,3,'#6fe6c8',.62);
-  /* epidermis inferior, con el estoma en el centro */
-  const sy=h*.70;
-  cellField(c,-40,sy,w+80,h*.40,11,3,3,'#6fe6c8',.62);
+  /* las epidermis, nítidas */
+  c.drawImage(st.epi,0,0,w,h);
 
-  const {cx}=area(w);
-  const op=.5+.5*Math.sin(t*1.5);
+  const sy=h*.70, cx=area(w).cx;
+  const op=.5+.5*Math.sin(t*1.9);
   const pore=18+op*30;
 
   /* el hueco del estoma, oscuro */
-  c.save();
+  c.save(); c.globalAlpha=A;
   c.fillStyle='rgba(1,6,10,.94)';
   c.beginPath(); c.ellipse(cx,sy+6,pore*.82+16,20+op*10,0,0,TAU); c.fill();
   c.restore();
@@ -1313,133 +1563,225 @@ function escCO2(c,w,h,t,A,L){
   /* las dos células guardián, curvándose al abrirse */
   for(const s of [-1,1]){
     const gx=cx+s*(pore+15);
-    c.save(); c.translate(gx,sy+6);
-    const gr=c.createLinearGradient(0,-26,0,26);
-    gr.addColorStop(0,'#8ff0d4'); gr.addColorStop(1,'#0d4a3a');
-    c.fillStyle=gr; c.strokeStyle='rgba(180,255,225,.55)'; c.lineWidth=1.8;
-    c.beginPath();
-    c.ellipse(0,0,15+op*7,26+op*9,s*op*.30,0,TAU);
+    c.save(); c.globalAlpha=A;
+    c.translate(gx,sy+6);
+    c.rotate(s*op*.30);
+    const gr=c.createLinearGradient(0,-28,0,28);
+    gr.addColorStop(0,'#9ff7dc'); gr.addColorStop(.55,'#1a6b53'); gr.addColorStop(1,'#07301f');
+    c.fillStyle=gr; c.strokeStyle='rgba(190,255,228,.6)'; c.lineWidth=1.9;
+    c.beginPath(); c.ellipse(0,0,15+op*7,26+op*9,0,0,TAU);
     c.fill(); c.stroke();
+    /* los cloroplastos: lo que distingue a las células guardián */
+    for(let q=0;q<4;q++){
+      const sd=((q*29+7)%17)/17;
+      chloroplast(c,(sd-.5)*13,(sd-.4)*26,7,q*.8+sd,.9);
+    }
+    nucleus(c,0,0,4.4,1);
+    /* las microfibrilas que hacen que la célula se curve */
+    fibrils(c,0,0,13+op*6,24+op*8,s>0?Math.PI:0,6,'#dffff0',.30);
     c.restore();
   }
-  /* luz que se cuela por el poro */
+  /* la luz que se cuela por el poro */
   rays(c,cx,sy-6,Math.PI/2,.10,h*.62,'#4ad9ff',t,3,7);
 
   /* el CO₂ entrando con estela */
-  for(let k=0;k<11;k++){
-    const ph=((t*.46)+k/11)%1;
+  for(let k=0;k<18;k++){
+    const ph=((t*.62)+k/18)%1;
     const off=Math.sin(k*2.4)*pore*.62;
     const x=cx+off*(1-ph*.5), y=sy+52-ph*66;
     c.save();
-    c.globalAlpha=Math.sin(ph*Math.PI)*.95;
-    for(let s=0;s<3;s++){
-      c.globalAlpha=Math.sin(ph*Math.PI)*(.55-s*.16);
-      CO2m(c,x,y+s*11,6.6-s*.5,t*.5+k+s,1);
-    }
+    c.globalAlpha=A*Math.sin(ph*Math.PI);
+    for(let s=0;s<3;s++)
+      CO2m(c,x,y+s*11,6.6-s*.5,t*.5+k+s,.92-s*.26);
     c.restore();
   }
   /* el O₂ saliendo, más despacio y al revés */
-  for(let k=0;k<5;k++){
-    const ph=((t*.30)+k/5)%1;
-    const x=cx+Math.sin(k*3.1)*pore*1.5+ph*26;
-    const y=sy-10-ph*40;
-    c.save(); c.globalAlpha=Math.sin(ph*Math.PI)*.55;
+  for(let k=0;k<8;k++){
+    const ph=((t*.34)+k/8)%1;
+    const x=cx+Math.sin(k*3.1)*pore*1.5+ph*26, y=sy-10-ph*40;
+    c.save(); c.globalAlpha=A*Math.sin(ph*Math.PI)*.55;
     O2(c,x,y,5.4,t*.5,1);
     c.restore();
   }
-  c.strokeStyle='rgba(74,217,255,.42)'; c.lineWidth=1.3; c.setLineDash([3,4]);
+  c.strokeStyle=rgba('#4ad9ff',.42); c.lineWidth=1.3; c.setLineDash([3,4]);
   c.beginPath();
   c.moveTo(cx-pore-46,sy+56); c.lineTo(cx-pore*.4,sy+14); c.stroke();
   c.setLineDash([]);
-  tag(c,'ESTOMAS',cx-pore-48,sy+52,'#4ad9ff',.92);
+  tag(c,'ESTOMAS',cx-pore-48,sy+52,'#4ad9ff',A*.92);
   vignette(c,w,h,.5);
+  grain(c,w,h,t,.05);
 }
 
-/* ══ ESCENA 3 · EL CO₂ QUEDA FIJADO EN EL CLOROPLASTO ══ */
-function escCalvin(c,w,h,t,A,L){
-  wash(c,w,h,['#0a0722','#0c0a26','#04060d'],null);
+/* ── escena 3 · el CO₂ queda fijado en el cloroplasto ────────── */
+function escCalvin(c,w,h,t,A,Ly,st){
+  wash(c,w,h,['#0d0930','#100c31','#05070f']);
 
-  /* grana apiladas al fondo, con paralaje y desenfoque */
-  L.setTransform(1,0,0,1,0,0);
-  L.clearRect(0,0,L.canvas.width,L.canvas.height);
-  L.setTransform(.34,0,0,.34,0,0);
-  for(let i=0;i<11;i++){
-    const sd=(((i*2654435761)>>>0)%97)/97;
-    const gx=w*(.06+sd*.94)+Math.sin(t*.10+i)*16;
-    const gy=h*(.12+((i*37)%80)/100);
-    L.save(); L.translate(gx,gy); L.rotate(-.22+i*.03);
-    for(let d=0;d<5;d++){
-      L.fillStyle='rgba(169,123,255,.20)';
-      rrect(L,-30,-24+d*11,60,6,3); L.fill();
-    }
-    L.restore();
-  }
-  composite(c,L,w,h,6,.85);
-
-  const A0=area(w), cx=A0.cx, cyR=h*.50;
+  const P=area(w), cx=P.cx, cyR=h*.50;
   const R=Math.min(w*.20,h*.27,240);
+  const pa=t*.55;
+  const px=cx+Math.cos(pa)*R, py=cyR+Math.sin(pa)*R;
+
+  /* la grana al fondo, con paralaje y fuera de foco */
+  c.save(); c.globalAlpha=A*.9;
+  c.filter='blur(3px)';
+  c.drawImage(st.grana,Math.sin(t*.10)*10,Math.sin(t*.13)*7,w,h);
+  c.filter='none';
+  c.restore();
+
+  /* el estroma iluminado, para que el ciclo se lea de lejos */
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cyR,R*3.2,'#5c3cff',.15);
+  glow(c,cx,cyR,R*1.4,'#b48cff',.12);
+  c.restore();
+
+  /* el polvo del estroma: motas de un pixel por todo el campo */
+  c.save();
+  for(let i=0,n=Math.round(w*h/2400);i<n;i++){
+    const sd=(((i*2654435761)>>>0)%997)/997;
+    const sd2=(((i*40503)>>>0)%991)/991;
+    c.fillStyle=rgba('#b9a4ff',.05+sd2*.11);
+    c.fillRect(sd*w,sd2*h,1,1);
+  }
+  c.restore();
+  /* los filamentos del estroma cruzando el campo */
+  for(let k=0;k<7;k++){
+    const sd=(((k*2246822519)>>>0)%613)/613;
+    fibrils(c,w*(.1+sd*.8),h*((k*.37+.12)%1),w*.15,h*.06,sd*3.1,18,'#8f6fff',
+      A*(.09+sd*.10));
+  }
+  envelope(c,w,h,'#a97bff',A*.8);
 
   /* el anillo del ciclo */
   c.save(); c.globalCompositeOperation='lighter';
   glow(c,cx,cyR,R*1.5,'#a97bff',.14);
   c.restore();
-  c.strokeStyle='rgba(169,123,255,.22)'; c.lineWidth=11;
+  c.strokeStyle=rgba('#a97bff',.22); c.lineWidth=11;
   c.beginPath(); c.arc(cx,cyR,R,0,TAU); c.stroke();
-  c.strokeStyle='rgba(169,123,255,.85)'; c.lineWidth=2.2;
+  c.strokeStyle=rgba('#a97bff',.85); c.lineWidth=2.2;
   c.setLineDash([6,10]); c.lineDashOffset=-t*22;
   c.beginPath(); c.arc(cx,cyR,R,0,TAU); c.stroke();
   c.setLineDash([]);
 
-  /* el pulso de energía dando la vuelta */
-  const pa=t*.55;
-  const pxp=cx+Math.cos(pa)*R, pyp=cyR+Math.sin(pa)*R;
+  /* las proteínas siguiendo el ciclo */
+  for(let k=0;k<3;k++){
+    const a=pa+k*TAU/3+1.2;
+    enzyme(c,cx+Math.cos(a)*R,cyR+Math.sin(a)*R,R*.13,a,t,A*.9);
+  }
+  /* el pulso de energía */
   c.save(); c.globalCompositeOperation='lighter';
-  glow(c,pxp,pyp,54,'#ffffff',.42);
+  glow(c,px,py,54,'#ffffff',.42);
   c.restore();
   c.fillStyle='#fff';
-  c.beginPath(); c.arc(pxp,pyp,4.6,0,TAU); c.fill();
+  c.beginPath(); c.arc(px,py,4.6,0,TAU); c.fill();
 
   /* el CO₂ llegando por la izquierda */
   const inPh=(t*.42)%1;
   c.save();
-  c.globalAlpha=clamp((1-inPh)*3,0,1);
+  c.globalAlpha=A*clamp((1-inPh)*3,0,1);
   CO2m(c,lerp(cx-R*1.55,cx-R*.86,ease(inPh)),cyR,13,t*.4,1);
   c.restore();
 
   /* los tres carbonos formándose en el anillo */
   const a0=pa+2.1, sp=R*.30;
-  const P=[0,1,2].map(k=>{
+  const P3=[0,1,2].map(k=>{
     const a=a0+k*TAU/3;
     return [cx+Math.cos(a)*sp, cyR+Math.sin(a)*sp];
   });
   c.strokeStyle=rgba('#4dff9f',.40+.5*inPh); c.lineWidth=3;
   c.beginPath();
-  for(let k=0;k<3;k++){ const q=P[(k+1)%3]; k?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); }
+  for(let k=0;k<3;k++){ const q=P3[(k+1)%3]; k?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); }
   c.closePath(); c.stroke();
-  for(let k=0;k<3;k++) C(c,P[k][0],P[k][1],15,1);
+  for(let k=0;k<3;k++) C(c,P3[k][0],P3[k][1],15,A);
 
   /* el 3-PGA saliendo por la derecha */
   const outPh=(t*.30+.5)%1;
   c.save();
-  c.globalAlpha=clamp(outPh*3,0,1);
+  c.globalAlpha=A*clamp(outPh*3,0,1);
   for(let k=0;k<3;k++)
-    C(c,lerp(cx+R*.9,cx+R*1.7,outPh),cyR-16+k*16,10,1);
+    C(c,lerp(cx+R*.9,cx+R*1.7,outPh),cyR-16+k*16,10,A);
   c.restore();
   if(outPh>.5) tag(c,'3-PGA',lerp(cx+R*.9,cx+R*1.7,outPh),cyR+34,'#4dff9f',
-    clamp((outPh-.5)*4,0,1));
+    A*clamp((outPh-.5)*4,0,1));
 
-  txt(c,'CLOROPLASTO',cx,cyR-R-30,12,'#a97bff',800,true);
-  tag(c,'CO₂',cx-R*1.42,cyR-40,'#4ad9ff',.9);
+  /* los ribosomas a la deriva, agrupados en parejas */
+  c.save();
+  for(let k=0;k<64;k++){
+    const sd=(((k*2654435761)>>>0)%1000)/1000;
+    const x=(sd*w+Math.sin(t*.5+k)*16)%w;
+    const y=((k*61)/64*h+t*7)%h;
+    c.globalAlpha=A*(.10+.16*Math.abs(Math.sin(t+k)));
+    c.fillStyle='#cdb4ff';
+    const r=1.2+sd*1.3;
+    c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+    c.beginPath(); c.arc(x+3.4,y+1.6,r*.78,0,TAU); c.fill();
+  }
+  c.restore();
+
+  txt(c,'CLOROPLASTO',cx,cyR-R-30,12,rgba('#a97bff',A*.9),800,true);
+  tag(c,'CO₂',cx-R*1.42,cyR-40,'#4ad9ff',A*.9);
   vignette(c,w,h,.55);
+  grain(c,w,h,t,.05);
 }
 
-/* ══ ESCENA 4 · LOS AZÚCARES HACE QUE CREZCA ══ */
-function escAzucar(c,w,h,t,A){
+/* ── la tierra, horneada con grano y piedras ──────────────────── */
+function bakeSoil(w,h,gy){
+  return staticCanvas(w,h,(c,W,H)=>{
+    /* la línea del horizonte, dentada */
+    const top=[];
+    for(let x=0;x<=W;x+=12) top.push([x,gy+6+Math.sin(x*.021)*7+Math.sin(x*.07)*3]);
+    c.beginPath();
+    c.moveTo(0,H);
+    top.forEach(p=>c.lineTo(p[0],p[1]));
+    c.lineTo(W,H); c.closePath();
+    const g=c.createLinearGradient(0,gy,0,H);
+    g.addColorStop(0,'#241a0c'); g.addColorStop(.35,'#171006'); g.addColorStop(1,'#080603');
+    c.fillStyle=g; c.fill();
+    /* el grano del suelo, en dos grosores */
+    for(let i=0;i<Math.round(W*H/420);i++){
+      const sd=((i*2654435761)>>>0%997)/997;
+      const sd2=((i*40503)>>>0%991)/991;
+      const x=sd*W, y=gy+8+sd2*(H-gy);
+      c.fillStyle=rgba('#c9a25e',.05+sd*.14);
+      c.fillRect(x,y,1+sd*2.6,1+sd2*2.2);
+    }
+    for(let i=0;i<Math.round(W*H/2600);i++){
+      const sd=((i*668265263)>>>0%1013)/1013;
+      const sd2=((i*2246822519)>>>0%1019)/1019;
+      c.fillStyle=rgba('#6b4f22',.10+sd*.18);
+      c.fillRect(sd*W,gy+10+sd2*(H-gy),1,1);
+    }
+    /* piedras, con luz de borde */
+    for(let i=0;i<Math.round(W/30);i++){
+      const sd=((i*2246822519)>>>0%613)/613;
+      const sd2=((i*374761393)>>>0%521)/521;
+      const x=sd*W, y=gy+14+sd2*(H-gy-30), r=1.6+sd2*7.5;
+      c.fillStyle='rgba(70,60,44,.78)';
+      c.beginPath(); c.ellipse(x,y,r,r*.66,sd*3,0,TAU); c.fill();
+      c.fillStyle='rgba(190,170,128,.18)';
+      c.beginPath(); c.ellipse(x-r*.2,y-r*.22,r*.6,r*.34,sd*3,0,TAU); c.fill();
+      c.strokeStyle='rgba(220,200,150,.10)'; c.lineWidth=.8;
+      c.beginPath(); c.ellipse(x,y,r,r*.66,sd*3,0,TAU); c.stroke();
+    }
+    /* la luz moteada cayendo sobre la tierra */
+    for(let i=0;i<26;i++){
+      const sd=((i*1103515245)>>>0%907)/907;
+      const sd2=((i*12345)>>>0%911)/911;
+      const x=sd*W, y=gy+10+sd2*(H-gy-20), r=34+sd*40;
+      const g=c.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,'rgba(255,214,130,.10)');
+      g.addColorStop(1,'rgba(255,214,130,0)');
+      c.fillStyle=g;
+      c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
+    }
+  });
+}
+
+/* ── escena 4 · los azúcares hacen que crezca ─────────────────── */
+function escAzucar(c,w,h,t,A,Ly,st){
   const g=c.createLinearGradient(0,0,0,h);
   g.addColorStop(0,'#0b1418'); g.addColorStop(.46,'#1d1a10');
   g.addColorStop(.80,'#2e2008'); g.addColorStop(1,'#0a0805');
   c.fillStyle=g; c.fillRect(0,0,w,h);
-  /* el sol bajo, en el horizonte */
   const sx=w*.72, sy=h*.72;
   c.save(); c.globalCompositeOperation='lighter';
   glow(c,sx,sy,h*.55,'#ffc44d',.16);
@@ -1447,80 +1789,131 @@ function escAzucar(c,w,h,t,A){
   rays(c,sx,sy,-Math.PI/2,.52,h*1.5,'#ffd27a',t,9,3);
   motes(c,w,h,t,Math.round(w/22)*CAP,['#ffd27a','#9ff0d0'],.7);
 
-  /* el suelo */
-  const gy=h*.80;
-  c.save();
-  c.fillStyle='rgba(12,10,6,.9)';
-  c.beginPath();
-  c.moveTo(0,gy+6);
-  for(let x=0;x<=w;x+=26) c.lineTo(x,gy+6+Math.sin(x*.021)*7+Math.sin(x*.07)*3);
-  c.lineTo(w,h); c.lineTo(0,h); c.closePath(); c.fill();
+  /* la tierra */
+  c.save(); c.globalAlpha=A;
+  c.drawImage(st.soil,0,0,w,h);
+  c.restore();
+
+  /* la red fina de filamentos bajo la tierra */
+  c.save(); c.globalAlpha=A;
+  for(let k=0;k<16;k++){
+    const sd=(((k*2246822519)>>>0)%613)/613;
+    const sd2=(((k*374761393)>>>0)%521)/521;
+    fibrils(c,area(w).cx+(sd-.5)*w*.86,h*.80+18+sd2*(h*.16),26+sd*30,10+sd2*10,
+      sd*3.1,10,'#c9a25e',.14+sd*.16);
+  }
   c.restore();
 
   /* la plántula creciendo, en bucle */
-  const {cx}=area(w);
+  const cx=area(w).cx, gy=h*.80;
   const gr=clamp((t*.34)%1,0,1);
   const grow=ease(clamp(gr*1.15,0,1));
   const stem=150*grow;
-  c.save(); c.globalCompositeOperation='lighter';
+  c.save(); c.globalAlpha=A;
+  c.globalCompositeOperation='lighter';
   glow(c,cx,gy-stem*.5,90*grow,'#4dff9f',.16*grow);
   c.restore();
-  /* la raíz */
+  /* la raíz, con pelitos */
+  c.save(); c.globalAlpha=A;
   c.strokeStyle=rgba('#c9a25e',.75); c.lineWidth=2.2; c.lineCap='round';
   c.beginPath();
   c.moveTo(cx,gy+4);
   c.quadraticCurveTo(cx+Math.sin(t*.6)*14,gy+44*grow,cx-6,gy+86*grow);
   c.stroke();
+  c.lineWidth=1.1;
+  for(const s of [-1,1]) for(let q=1;q<=4;q++){
+    const u=q/5;
+    const bx=lerp(cx,cx-6,u), by=lerp(gy+4,gy+86*grow,u);
+    c.beginPath();
+    c.moveTo(bx,by);
+    c.lineTo(bx+s*10*grow*(1-u*.5),by+7*grow);
+    c.stroke();
+  }
+  c.strokeStyle=rgba('#c9a25e',.75); c.lineWidth=2.2;
   for(const s of [-1,1]){
     c.beginPath();
     c.moveTo(cx,gy+26*grow);
     c.quadraticCurveTo(cx+s*26*grow,gy+44*grow,cx+s*38*grow,gy+64*grow);
     c.stroke();
   }
+  c.lineCap='butt';
   /* el tallo */
   c.strokeStyle=rgba('#7dffc0',.95); c.lineWidth=4.4;
-  c.beginPath();
-  c.moveTo(cx,gy+4); c.lineTo(cx,gy-stem);
-  c.stroke();
-  c.lineCap='butt';
-  /* las dos hojas abriéndose */
+  c.beginPath(); c.moveTo(cx,gy+4); c.lineTo(cx,gy-stem); c.stroke();
+  /* las dos hojas abriéndose, con nervadura y cloroplastos */
   for(const s of [-1,1]){
     const o=ease(clamp((gr-.28)/.5,0,1))*s;
     c.save(); c.translate(cx,gy-stem*.62); c.rotate(o*.62);
-    const lg=c.createLinearGradient(0,-14,0,14);
-    lg.addColorStop(0,'#8dffc6'); lg.addColorStop(1,'#0d5c40');
-    c.fillStyle=lg;
-    c.beginPath();
-    c.moveTo(0,0);
-    c.bezierCurveTo(s*34,-26, s*74,-16, s*86,0);
-    c.bezierCurveTo(s*74,16, s*34,26, 0,0);
-    c.fill();
-    c.strokeStyle='rgba(190,255,220,.5)'; c.lineWidth=1.3; c.stroke();
+    const lw=86, lh=26;
+    const shape=new Path2D();
+    shape.moveTo(0,0);
+    shape.bezierCurveTo(s*lw*.40,-lh, s*lw*.86,-lh*.62, s*lw,0);
+    shape.bezierCurveTo(s*lw*.86, lh*.62, s*lw*.40, lh, 0,0);
+    shape.closePath();
+    const lg=c.createLinearGradient(0,-lh,0,lh);
+    lg.addColorStop(0,'#9dffcd'); lg.addColorStop(.5,'#1c8a5e'); lg.addColorStop(1,'#07402c');
+    c.fillStyle=lg; c.fill(shape);
+    c.strokeStyle='rgba(200,255,225,.55)'; c.lineWidth=1.4; c.stroke(shape);
+    /* la nervadura central y las secundarias */
+    c.strokeStyle='rgba(220,255,235,.45)'; c.lineWidth=1.6;
+    c.beginPath(); c.moveTo(0,0); c.lineTo(s*lw*.96,0); c.stroke();
+    c.strokeStyle='rgba(220,255,235,.22)'; c.lineWidth=1;
+    for(let q=1;q<=5;q++){
+      const u=q/6;
+      c.beginPath(); c.moveTo(s*lw*u,0);
+      c.lineTo(s*lw*u+lw*.06,-lh*.42*(1-u*.4)); c.stroke();
+      c.beginPath(); c.moveTo(s*lw*u,0);
+      c.lineTo(s*lw*u+lw*.06, lh*.42*(1-u*.4)); c.stroke();
+    }
+    /* el moteado del interior de la hoja */
+    c.save(); c.clip(shape);
+    for(let q=0;q<30;q++){
+      const sd=((q*53+7)%31)/31, sd2=((q*97+13)%29)/29;
+      c.fillStyle='rgba(220,255,235,.11)';
+      c.fillRect((sd-.5)*lw*1.1,(sd2-.5)*lh*1.1,1.4,1.4);
+    }
+    c.restore();
+    /* los cloroplastos dentro de la hoja */
+    for(let q=0;q<11;q++){
+      const sd=((q*37+11)%19)/19;
+      chloroplast(c,s*lw*(.12+sd*.72),(sd-.5)*lh*.7,5.4,q*.8+sd,.85);
+    }
+    /* los tricomas del borde */
+    for(let q=0;q<4;q++){
+      const u=.30+q*.2;
+      trichome(c,s*lw*u,-lh*.5*(1-Math.abs(u-.5)*1.2),-1.2,7,'rgba(200,255,225,.5)',.8);
+    }
     c.restore();
   }
+  c.restore();
   /* los azúcares llegando a la planta */
   for(let k=0;k<12;k++){
     const ph=((t*.26)+k/12)%1;
     const a=k*2.39996;
     const x0=cx+Math.cos(a)*w*.30, y0=gy+Math.sin(a)*h*.16+18;
     const x1=cx, y1=gy-stem*.5;
-    const x=lerp(x0,x1,ease(ph));
-    const y=lerp(y0,y1,ease(ph))-Math.sin(ph*Math.PI)*46;
+    const x=lerp(x0,x1,ease(ph)), y=lerp(y0,y1,ease(ph))-Math.sin(ph*Math.PI)*46;
     c.save();
-    c.globalAlpha=Math.sin(ph*Math.PI)*.92;
-    ring(c,x,y,13,'#ffc44d',t*.4+k,.95);
+    c.globalAlpha=A*Math.sin(ph*Math.PI)*.95;
+    hexose(c,x,y,13,'#ffc44d',t*.4+k,1);
     c.restore();
   }
-  tag(c,'PARA CRECER',cx,gy+112,'#4dff9f',.9);
+  tag(c,'PARA CRECER',cx,gy+112,'#4dff9f',A*.9);
   vignette(c,w,h,.5);
+  grain(c,w,h,t,.05);
 }
 
 /* ══ el motor: una escena, un fundido, un barrido de luz ══ */
-let bgL=null;
 scene($('#cv2'),{fps:LOW?30:60,dpr:DPR,gate:['s2'],bloom:true,
   resize(w,h){
     this.W=w; this.H=h;
     this.lay=layer(w,h,.30);
+    /* todo lo que no se mueve se hornea una sola vez por tamaño */
+    const L=Math.min(h*.60,w*.32);
+    this.leaf=bakeLeaf(L,L*.56);
+    this.epi=bakeEpi(w,h,h*.70,'#6fe6c8');
+    this.grana=bakeGrana(w,h);
+    this.soil=bakeSoil(w,h,h*.80);
   },
   draw(c,w,h,t){
     if(!this.lay) this.lay=layer(w,h,.30);
@@ -1530,8 +1923,8 @@ scene($('#cv2'),{fps:LOW?30:60,dpr:DPR,gate:['s2'],bloom:true,
     const S=[escLuz,escCO2,escCalvin,escAzucar];
 
     c.save();
-    S[i](c,w,h,t,1-f,this.lay);
-    if(f>0&&i+1<n) S[i+1](c,w,h,t,f,this.lay);
+    S[i](c,w,h,t,1-f,this.lay,this);
+    if(f>0&&i+1<n) S[i+1](c,w,h,t,f,this.lay,this);
     c.restore();
 
     /* el barrido de luz en el cambio de paso */
@@ -1551,6 +1944,28 @@ scene($('#cv2'),{fps:LOW?30:60,dpr:DPR,gate:['s2'],bloom:true,
       c.restore();
     }
   }});
+
+/* la grana apilada, horneada con estroma y laminas */
+function bakeGrana(w,h){
+  return staticCanvas(w,h,(c,W,H)=>{
+    for(let i=0;i<13;i++){
+      const sd=(((i*2654435761)>>>0)%97)/97;
+      const gx=W*(.04+sd*.94), gy=H*(.10+((i*37)%80)/100);
+      c.save(); c.translate(gx,gy); c.rotate(-.22+i*.03);
+      for(let d=0;d<5;d++){
+        const g=c.createLinearGradient(-30,0,30,0);
+        g.addColorStop(0,'rgba(150,100,235,.30)');
+        g.addColorStop(.5,'rgba(210,180,255,.34)');
+        g.addColorStop(1,'rgba(150,100,235,.30)');
+        c.fillStyle=g;
+        rrect(c,-30,-24+d*11,60,6,3); c.fill();
+        c.strokeStyle='rgba(230,210,255,.22)'; c.lineWidth=.7;
+        rrect(c,-30,-24+d*11,60,6,3); c.stroke();
+      }
+      c.restore();
+    }
+  },1);
+}
 
 
 /* ═══════════════════════════════════════════════════════════════
