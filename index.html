@@ -185,12 +185,14 @@ h3{font-size:clamp(17px,2vw,23px);font-weight:750;line-height:1.18;
 html.vid{overflow:hidden}
 #intro{position:fixed;inset:0;z-index:400;overflow:hidden;
   background:radial-gradient(125% 95% at 50% 50%,#05171b 0%,#01080a 68%,#000 100%);
-  opacity:0;transition:opacity .85s ease}
+  opacity:0;transition:opacity 1.8s cubic-bezier(.4,0,.2,1)}
 #intro.on{opacity:1}
 #intro.fuera{opacity:0;pointer-events:none}
 #intro video{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:80%;height:94%;display:block;object-fit:cover;object-position:center;
-  box-shadow:0 24px 80px rgba(0,0,0,.55)}
+  box-shadow:0 24px 80px rgba(0,0,0,.55);
+  transition:transform 1.8s cubic-bezier(.4,0,.2,1)}
+#intro.fuera video{transform:translate(-50%,-50%) scale(1.04)}
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2489,8 +2491,8 @@ scene($('#cv3'),{fps:LOW?30:60,gate:['s3'],
    ═══════════════════════════════════════════════════════════════ */
 scene($('#cv4'),{fps:LOW?30:60,gate:['s4'],
   resize(w,h){
-    this.L=Math.min(w*.34,h*.26,230);
-    this.leaf=bakeLeaf(this.L,this.L*.56);
+    const s=Math.min(w*.30,h*.44,205);
+    this.leaf=bakeLeaf(s,s*.56);
   },
   draw(c,w,h,t){
   /* la aguja recorre de "templado" a "muy caluroso" y vuelve */
@@ -2519,49 +2521,62 @@ scene($('#cv4'),{fps:LOW?30:60,gate:['s4'],
   c.restore();
   rays(c,sunX,sunY,Math.PI*.78,sec?.30:.52,h*1.3,sec?'#ffd27a':'#ff8a4d',t,sec?5:9,3);
 
+  /* cajas de ambas columnas: la hoja a la izquierda, los medidores a la
+     derecha, y el hueco entre las dos se respeta siempre */
+  const s=Math.min(w*.30,h*.44,205);
+  const lx=w*.05, ly=(h-s*.56)*.5;
+  const mx0=Math.min(w*.40,lx+s+w*.06), mx1=x1;
+  const MW=mx1-mx0;
+
+  /* el temblor del aire cuando hace demasiado calor, detrás de los medidores */
+  if(!sec){
+    c.save(); c.globalCompositeOperation='lighter';
+    c.strokeStyle='rgba(255,180,90,.13)'; c.lineWidth=1.1;
+    for(let i=0;i<5;i++){
+      const yy=h*(.70+i*.052);
+      c.beginPath();
+      for(let x=mx0;x<=mx1;x+=16)
+        c.lineTo(x,yy+Math.sin(x*.03+t*2+i)*3.2);
+      c.stroke();
+    }
+    c.restore();
+  }
+
   /* la hoja, con sus tricomas, y el estoma abierto o cerrado */
   if(this.leaf){
-    const lx=w*.24, ly=h*.56, s=this.L*.86;
     c.save();
-    c.globalAlpha=.60;
+    c.globalAlpha=.62;
     c.translate(lx,ly);
     c.rotate(-.20+Math.sin(t*.5)*.02+(sec?0:.10));
     c.drawImage(this.leaf,0,0,s,s*.56);
     c.restore();
+    /* los tricomas cuelgan del envés, hacia abajo, con el aire caliente */
     for(let k=0;k<6;k++){
+      const u=.16+k*.14;
+      const bx=lx+Math.cos(-.20)*s*u, by=ly+Math.sin(-.20)*s*u+s*.56;
       c.save();
-      c.globalAlpha=.45;
-      trichome(c,lx-s*.36+k*s*.15,ly+s*.15,(sec?1.9:1.5),9,
-        sec?'rgba(200,255,225,.7)':'rgba(255,220,150,.7)',.7);
+      c.globalAlpha=.5;
+      const a=Math.PI*.5+(sec?1.9:1.5);
+      trichome(c,bx,by,a,9,
+        sec?'rgba(200,255,225,.75)':'rgba(255,220,150,.75)',.75);
       c.restore();
     }
     /* el estoma: dos células guardián que se abren o se cierran */
     const open=sec?.5:.06;
     c.save();
-    c.translate(lx+s*.30,ly+s*.03);
-    c.fillStyle=rgba(sec?'#7dffc0':'#e0b070',.75);
+    c.translate(lx+s*.30,ly+s*.28);
+    c.fillStyle=rgba(sec?'#7dffc0':'#e0b070',.78);
     for(const sgn of [-1,1]){
       c.save();
       c.rotate(sgn*(open*.85));
       c.beginPath(); c.ellipse(sgn*6,0,4.6,11,0,0,TAU); c.fill();
       c.restore();
     }
-    c.fillStyle='rgba(6,20,16,.85)';
+    c.fillStyle='rgba(6,20,16,.9)';
     c.beginPath(); c.ellipse(0,0,3+open*4,10-open*7,0,0,TAU); c.fill();
-    c.restore();
-  }
-
-  /* el temblor del aire cuando hace demasiado calor */
-  if(!sec){
-    c.save(); c.globalCompositeOperation='lighter';
-    c.strokeStyle='rgba(255,180,90,.14)'; c.lineWidth=1.1;
-    for(let i=0;i<9;i++){
-      const yy=h*(.42+i*.045);
-      c.beginPath();
-      for(let x=0;x<=w;x+=16)
-        c.lineTo(x,yy+Math.sin(x*.03+t*2+i)*3.2);
-      c.stroke();
-    }
+    c.strokeStyle=rgba(sec?'#7dffc0':'#e0b070',.5);
+    c.lineWidth=1;
+    c.beginPath(); c.ellipse(0,0,9,15,0,0,TAU); c.stroke();
     c.restore();
   }
 
@@ -2592,38 +2607,38 @@ scene($('#cv4'),{fps:LOW?30:60,gate:['s4'],
   c.restore();
   tag(c,sec?'TEMPERATURA MODERADA':'MUCHO CALOR',px,yAxis-46,col,1);
 
-  /* los dos medidores que el texto menciona */
+  /* los dos medidores que el texto menciona, en la columna derecha */
   const gauges=[
     ['ENTRADA DE CO₂',sec?.92:.34,lerp(.92,.34,clamp((sw-.42)/.34,0,1))],
     ['EFICIENCIA FOTOSINTÉTICA',sec?.88:.30,lerp(.88,.30,clamp((sw-.42)/.34,0,1))]
   ];
-  const gy=h*.58, gh=h*.26;
+  const gy=h*.42, gh=h*.26;
   gauges.forEach(([name,_,val],k)=>{
     const yy=gy+k*(gh*.62);
-    txt(c,name,x0,yy,10.5,'rgba(143,163,173,.9)',800,true,'left');
+    txt(c,name,mx0,yy,10.5,'rgba(143,163,173,.9)',800,true,'left');
     c.fillStyle='rgba(255,255,255,.07)';
-    rrect(c,x0,yy+10,x1-x0,9,5); c.fill();
-    const bw=(x1-x0)*clamp(val,0,1);
+    rrect(c,mx0,yy+10,MW,9,5); c.fill();
+    const bw=MW*clamp(val,0,1);
     c.fillStyle=sec?'#4dff9f':'#ffc44d';
-    rrect(c,x0,yy+10,bw,9,5); c.fill();
+    rrect(c,mx0,yy+10,bw,9,5); c.fill();
     /* el extremo de la barra, con su brillo */
     c.save(); c.globalCompositeOperation='lighter';
-    glow(c,x0+bw,yy+14,26,sec?'#4dff9f':'#ffc44d',.20);
+    glow(c,mx0+bw,yy+14,26,sec?'#4dff9f':'#ffc44d',.20);
     c.restore();
     c.fillStyle=sec?'#dfffee':'#fff0cd';
-    c.beginPath(); c.arc(x0+bw,yy+14,2.6,0,TAU); c.fill();
+    c.beginPath(); c.arc(mx0+bw,yy+14,2.6,0,TAU); c.fill();
   });
 
   /* el agua: baja cuando sube el calor */
-  const wy=h*.885;
-  txt(c,'AGUA',x0,wy,10.5,'rgba(143,163,173,.9)',800,true,'left');
+  const wy=h*.76;
+  txt(c,'AGUA',mx0,wy,10.5,'rgba(143,163,173,.9)',800,true,'left');
   c.fillStyle='rgba(255,255,255,.07)';
-  rrect(c,x0,wy+10,x1-x0,9,5); c.fill();
+  rrect(c,mx0,wy+10,MW,9,5); c.fill();
   const wat=lerp(.95,.22,clamp((sw-.36)/.40,0,1));
   c.fillStyle=wat>.5?'#4ad9ff':'#ff5f8f';
-  rrect(c,x0,wy+10,(x1-x0)*wat,9,5); c.fill();
+  rrect(c,mx0,wy+10,MW*wat,9,5); c.fill();
   c.save(); c.globalCompositeOperation='lighter';
-  glow(c,x0+(x1-x0)*wat,wy+14,24,wat>.5?'#4ad9ff':'#ff5f8f',.20);
+  glow(c,mx0+MW*wat,wy+14,24,wat>.5?'#4ad9ff':'#ff5f8f',.20);
   c.restore();
 
   /* la tierra bajo la barra, con su nivel de agua */
@@ -2644,7 +2659,8 @@ scene($('#cv4'),{fps:LOW?30:60,gate:['s4'],
   c.fillRect(0,h-4-(h-sy2-6)*wat*.5,w,4+(h-sy2-6)*wat*.5);
   c.restore();
 
-  txt(c,lab,(x0+x1)/2,wy+44,11.5,col,800,true);
+  /* el resultado, centrado bajo la hoja, en su propia columna */
+  txt(c,lab,lx+s*.5,ly+s*.56+Math.max(26,h*.10),11.5,col,800,true);
   vignette(c,w,h,.14);
   grain(c,w,h,t,.04);
 }});
@@ -2982,7 +2998,8 @@ addEventListener('scroll',()=>{
     box.classList.add('fuera');
     document.documentElement.classList.remove('vid');
     try{ vid.pause(); }catch(e){}
-    setTimeout(()=>{ if(box.parentNode) box.remove(); },900);
+    /* se espera a que el desvanecido termine antes de quitar el vídeo */
+    setTimeout(()=>{ if(box.parentNode) box.remove(); }, 1950);
   }
 
   /* quien pide menos movimiento no ve el vídeo: entra directo en la portada */
