@@ -214,19 +214,23 @@ h3{font-size:clamp(17px,2vw,23px);font-weight:750;line-height:1.18;
 /* ═══════════════════════════════════════════════════════════════
    S2 · ¿CÓMO FUNCIONA? — cuatro pasos anclados al scroll
    ═══════════════════════════════════════════════════════════════ */
-#s2{height:460vh;padding:0}
+#s2{height:470vh;padding:0}
 .pin{position:sticky;top:0;height:var(--vh);display:grid;align-items:center;
   overflow:hidden}
+#cv2{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(101deg,
+    rgba(3,7,10,.95) 0%,rgba(3,7,10,.88) 32%,
+    rgba(3,7,10,.46) 56%,rgba(3,7,10,.10) 100%)}
+@media(max-width:900px){
+  .scrim{background:linear-gradient(180deg,
+    rgba(3,7,10,.42) 0%,rgba(3,7,10,.88) 40%,rgba(3,7,10,.97) 100%)}
+}
+.stage{position:relative;z-index:2;width:100%}
+.tabs{position:absolute;left:0;right:0;bottom:clamp(16px,3.6vh,40px);z-index:2}
 .qhead{display:block;font-size:clamp(17px,2.1vw,27px);font-weight:800;
   letter-spacing:-.022em;line-height:1.12;margin-bottom:clamp(14px,2.4vh,28px)}
-.grid2{display:grid;grid-template-columns:.88fr 1.12fr;
-  gap:clamp(24px,4vw,60px);align-items:center}
-@media(max-width:900px){
-  .grid2{grid-template-columns:1fr;align-content:center}
-  #s2 .fstep p{display:none}
-  #s2 .fstep .why{display:none}
-}
-.stepbox{position:relative;min-height:300px}
+.stepbox{position:relative;min-height:300px;max-width:44ch}
 .fstep{position:absolute;inset:0;opacity:0;transform:translateY(18px);
   pointer-events:none;transition:opacity .5s ease,transform .5s cubic-bezier(.14,1,.28,1)}
 .fstep.on{opacity:1;transform:none}
@@ -240,16 +244,22 @@ h3{font-size:clamp(17px,2vw,23px);font-weight:750;line-height:1.18;
 .stepbox p b{color:var(--ink);font-weight:650}
 .stepbox .why{font:800 10.5px/1.5 var(--mono);letter-spacing:.18em;
   text-transform:uppercase;color:var(--dim);margin-top:18px}
-#cv2{width:100%;height:clamp(300px,52vh,510px);border-radius:20px;
-  border:1px solid var(--line);background:rgba(255,255,255,.018)}
-.tl{display:flex;gap:6px;margin-top:26px}
-.tl button{flex:1;padding:10px 4px;border-radius:9px;border:1px solid var(--line);
+@media(max-width:900px){
+  #s2 .fstep p{display:none}
+  #s2 .fstep .why{display:none}
+  .stepbox{min-height:120px}
+}
+.tl{display:flex;gap:8px;max-width:640px}
+.tl button{flex:1;padding:11px 6px;border-radius:11px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(4,10,12,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   font:800 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
   color:var(--dim);transition:.35s;position:relative;overflow:hidden}
 .tl button::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:0;
   background:var(--ac);transition:width .4s}
-.tl button.done{color:var(--mut);border-color:rgba(255,255,255,.16)}
-.tl button.on{color:var(--bg);background:var(--ac);border-color:var(--ac)}
+.tl button.done{color:var(--mut);border-color:rgba(255,255,255,.2)}
+.tl button.on{color:var(--bg);background:var(--ac);border-color:var(--ac);
+  box-shadow:0 0 26px color-mix(in srgb,var(--ac) 45%,transparent)}
 .tl button.on::after{width:100%}
 @media(max-width:900px){.tl{display:none}}
 
@@ -541,17 +551,18 @@ footer b{color:var(--mut)}
 <!-- ═══════════ S2 · ¿CÓMO FUNCIONA LA FOTOSÍNTESIS C3? ═══════════ -->
 <section id="s2" aria-labelledby="t2">
   <div class="pin">
-    <div class="wrap">
+    <canvas id="cv2" role="img"
+      aria-label="Los cuatro pasos de la fotosíntesis C3 en una sola animación:
+      uno, la clorofila de la hoja captura la energía de la luz; dos, el CO2
+      entra a la hoja por los estomas; tres, dentro del cloroplasto el CO2 es
+      fijado y se convierte en 3-PGA; cuatro, la energía obtenida produce los
+      compuestos con los que la planta crece."></canvas>
+    <div class="scrim" aria-hidden="true"></div>
+    <div class="wrap stage">
       <span class="qhead rv" id="t2">🍃 ¿Cómo funciona la fotosíntesis C₃?</span>
-      <div class="grid2">
-        <div class="stepbox" id="stepbox"></div>
-        <div><canvas id="cv2" role="img"
-          aria-label="Los cuatro pasos de la fotosíntesis C3 en una sola animación:
-          uno, la clorofila de la hoja captura la energía de la luz; dos, el CO2
-          entra a la hoja por los estomas; tres, dentro del cloroplasto el CO2 es
-          fijado y se convierte en 3-PGA; cuatro, la energía obtenida produce los
-          compuestos con los que la planta crece."></canvas></div>
-      </div>
+      <div class="stepbox" id="stepbox"></div>
+    </div>
+    <div class="wrap tabs">
       <div class="tl" id="tl" role="tablist" aria-label="Los cuatro pasos"></div>
     </div>
   </div>
@@ -728,6 +739,11 @@ const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LOW=(navigator.hardwareConcurrency||4)<=4;
 const CAP=LOW?.55:1;
+/* nitidez real: en pantallas HiDPI dibujamos al doble de resolución */
+const HD=(window.devicePixelRatio||1);
+const DPR=LOW?1:Math.min(HD,2);
+/* Radio de desenfoque para el fondo y el primer plano */
+const DOF=LOW?0:1;
 
 /* un único bucle para las 7 escenas: nada de requestAnimationFrame sueltos */
 const TASKS=[];
@@ -886,6 +902,92 @@ function rrect(c,x,y,w,h,r){
   c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r);
   c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r);
   c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRIMITIVAS DE ALTAS PRESTACIONES
+   ═══════════════════════════════════════════════════════════════ */
+/* Degradado de fondo, para dar cuerpo a cada escena */
+function wash(c,w,h,cols,stops){
+  stops=stops||[0,.5,1];
+  const g=c.createLinearGradient(0,0,0,h);
+  stops.forEach((p,i)=>g.addColorStop(p,cols[i]));
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+}
+/* Rayos de luz volumétricos: conos suaves que se cruzan y respiran */
+function rays(c,ox,oy,ang,spread,len,col,t,n,seed){
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let i=0;i<n;i++){
+    const k=n>1?i/(n-1):.5;
+    const a=ang+(k-.5)*spread+Math.sin(t*.20+i*1.7+seed)*.030;
+    const sw=.012+.022*Math.abs(Math.sin(t*.37+i*1.1+seed));
+    const al=(.026+.030*Math.abs(Math.sin(t*.50+i*2.1+seed)));
+    const g=c.createLinearGradient(ox,oy,ox+Math.cos(a)*len,oy+Math.sin(a)*len);
+    g.addColorStop(0,rgba(col,al*1.7));
+    g.addColorStop(.40,rgba(col,al*.75));
+    g.addColorStop(1,rgba(col,0));
+    c.fillStyle=g;
+    c.beginPath();
+    c.moveTo(ox,oy);
+    c.lineTo(ox+Math.cos(a-sw)*len,oy+Math.sin(a-sw)*len);
+    c.lineTo(ox+Math.cos(a+sw)*len,oy+Math.sin(a+sw)*len);
+    c.closePath(); c.fill();
+  }
+  c.restore();
+}
+/* Partículas en tres capas de profundidad: dan volumen al aire */
+function motes(c,w,h,t,n,cols,spd){
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let i=0;i<n;i++){
+    const sd=(((i*2654435761)>>>0)%1000)/1000;
+    const zz=.30+sd*1.45;
+    const y=((((i*97)%997)/997)*h + t*(5+sd*18)*zz*spd)%(h+40)-20;
+    const x=((((i*131)%991)/991)*w + Math.sin(t*.28+sd*9)*26*zz)%w;
+    c.fillStyle=rgba(cols[i%cols.length],.09+.15*Math.abs(Math.sin(t*.65+sd*6)));
+    c.beginPath(); c.arc(x,y,(.5+sd*1.7)*zz,0,TAU); c.fill();
+  }
+  c.restore();
+}
+/* Muro de células: la textura de la epidermis */
+function cellField(c,x,y,w,h,cols,rows,gap,col,al){
+  const cw=w/cols, ch=h/rows;
+  c.save(); c.lineWidth=1.15;
+  for(let r=0;r<rows;r++) for(let k=0;k<cols;k++){
+    const cx=x+cw*(k+.5)+(r%2?cw*.2:0), cy=y+ch*(r+.5);
+    c.fillStyle=rgba(col,al*.11);
+    c.strokeStyle=rgba(col,al*(.34+.22*Math.abs(Math.sin(k*1.3+r*.7))));
+    rrect(c,cx-cw*.5+gap,cy-ch*.5+gap,cw-gap*2,ch-gap*2,Math.min(cw,ch)*.36);
+    c.fill(); c.stroke();
+  }
+  c.restore();
+}
+/* Capa desenfocada para la profundidad de campo */
+function layer(W,H,scale){
+  const cv=document.createElement('canvas');
+  cv.width=Math.max(1,Math.round(W*scale));
+  cv.height=Math.max(1,Math.round(H*scale));
+  const c=cv.getContext('2d');
+  c.setTransform(scale,0,0,scale,0,0);
+  return c;
+}
+function composite(c,l,W,H,blur,alpha){
+  if(!l||alpha<=0) return;
+  c.save();
+  c.globalAlpha=alpha;
+  if(blur>0) c.filter='blur('+blur+'px)';
+  c.globalCompositeOperation='lighter';
+  c.drawImage(l.canvas,0,0,W,H);
+  c.filter='none';
+  c.globalCompositeOperation='source-over';
+  c.restore();
+}
+/* Viñeta: enfoca la mirada en el centro */
+function vignette(c,w,h,a){
+  const g=c.createRadialGradient(w*.5,h*.48,Math.min(w,h)*.22,
+    w*.5,h*.5,Math.max(w,h)*.78);
+  g.addColorStop(0,'rgba(0,0,0,0)');
+  g.addColorStop(1,rgba('#02060a',a));
+  c.fillStyle=g; c.fillRect(0,0,w,h);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1070,7 +1172,7 @@ scene($('#cv1'),{fps:LOW?30:60,gate:['s1'],draw(c,w,h,t){
 
 
 /* ═══════════════════════════════════════════════════════════════
-   S2 · LOS CUATRO PASOS — dirigidos por el scroll
+   S2 · LOS CUATRO PASOS — una escena por paso, dirigido por el scroll
    ═══════════════════════════════════════════════════════════════ */
 const STAGES=[
   {k:'PASO 1', e:'☀️', t:'Captura de luz',
@@ -1087,183 +1189,368 @@ const STAGES=[
    w:'Glucosa, almidón, celulosa: con eso crece.'}];
 const FLOW={i:0,p:0};
 
-/* la hoja, compartida por los tres primeros pasos */
-function leafPath(c,cx,cy,L,Wd,rot){
-  c.save(); c.translate(cx,cy); c.rotate(rot||0);
+/* el área donde se compone la acción: a la derecha, libre del texto */
+function area(w){ return {x0:w*.42, x1:w*.965, cx:w*.705}; }
+
+/* silueta de hoja, apuntando a la derecha */
+function leafShape(c,cx,cy,L,Wd,rot){
+  c.save(); c.translate(cx,cy); c.rotate(rot);
   c.beginPath();
   c.moveTo(0,-L);
-  c.bezierCurveTo(Wd,-L*.52, Wd*.86,L*.46, 0,L);
-  c.bezierCurveTo(-Wd*.86,L*.46, -Wd,-L*.52, 0,-L);
+  c.bezierCurveTo( Wd*1.10,-L*.58,  Wd*.92, L*.52,  0, L);
+  c.bezierCurveTo(-Wd*.92, L*.52, -Wd*1.10,-L*.58, 0,-L);
   c.closePath();
   c.restore();
 }
 
-scene($('#cv2'),{fps:LOW?30:60,gate:['s2'],draw(c,w,h,t){
-  const n=STAGES.length;
-  const i=clamp(FLOW.i,0,n-1), lp=clamp(FLOW.p*n-i,0,1);
-  const aNext=clamp((lp-.74)/.26,0,1);
-  const cx=w*.5, cy=h*.5, L=Math.min(h*.36,w*.20), Wd=L*.60;
+/* ══ ESCENA 1 · LA CLOROFILA CAPTURA LA LUZ ══ */
+function escLuz(c,w,h,t,A){
+  wash(c,w,h,['#052a20','#04202a','#020809'],null);
+  /* haces de sol entrando por arriba a la izquierda */
+  rays(c,-w*.06,-h*.16,.78,.62,Math.max(w,h)*1.55,'#ffc44d',t,8,0);
+  motes(c,w,h,t,Math.round(w/16)*CAP,['#ffd98a','#9ff0d0'],1);
 
-  /* fondo: halo del color del paso activo */
-  const COL=['#ffc44d','#4ad9ff','#a97bff','#4dff9f'];
-  c.save(); c.globalCompositeOperation='lighter';
-  glow(c,cx,cy,Math.min(w,h)*.46,COL[i],.09);
-  c.restore();
+  const {cx}=area(w);
+  const cyL=h*.80, L=Math.min(h*.62,w*.34), Wd=L*.56, rot=-.20;
 
-  /* ── la hoja ── */
-  const cyL=cy-h*.02;
+  /* la hoja, con volumen: del lado del sol, verde vivo */
   c.save();
-  c.globalAlpha=.92;
-  leafPath(c,cx,cyL,L,Wd,0);
-  c.fillStyle='rgba(9,26,20,.72)'; c.fill();
-  c.strokeStyle='rgba(77,255,159,.42)'; c.lineWidth=2; c.stroke();
-  /* nervadura central */
-  c.strokeStyle='rgba(77,255,159,.30)'; c.lineWidth=1.6;
-  c.beginPath(); c.moveTo(cx,cyL-L*.92); c.lineTo(cx,cyL+L*.92); c.stroke();
-  for(let v=-3;v<=3;v++){
+  leafShape(c,cx,cyL,L,Wd,rot);
+  const g=c.createLinearGradient(cx-L*.7,cyL-L,cx+L*.6,cyL+L);
+  g.addColorStop(0,'#1c6b48');
+  g.addColorStop(.42,'#0f4634');
+  g.addColorStop(1,'#052018');
+  c.fillStyle=g; c.fill();
+  c.clip();
+  /* nervadura central y secundarias */
+  c.save(); c.rotate(rot);
+  c.strokeStyle='rgba(150,255,205,.30)'; c.lineWidth=2.6;
+  c.beginPath(); c.moveTo(-L,0); c.lineTo(L,0); c.stroke();
+  for(let v=-7;v<=7;v++){
     if(!v) continue;
-    c.strokeStyle='rgba(77,255,159,.16)'; c.lineWidth=1;
-    c.beginPath();
-    c.moveTo(cx,cyL+v*L*.22);
-    c.quadraticCurveTo(cx+L*.22,cyL+v*L*.22+L*.05,
-      cx+L*.40,cyL+v*L*.22+L*.16);
-    c.stroke();
-    c.beginPath();
-    c.moveTo(cx,cyL+v*L*.22);
-    c.quadraticCurveTo(cx-L*.22,cyL+v*L*.22+L*.05,
-      cx-L*.40,cyL+v*L*.22+L*.16);
-    c.stroke();
+    const bx=v*L*.128, len=L*.30*(1-Math.abs(v)/9);
+    c.strokeStyle='rgba(140,240,195,.16)'; c.lineWidth=1.5;
+    for(const s of [-1,1]){
+      c.beginPath();
+      c.moveTo(bx,0);
+      c.quadraticCurveTo(bx+s*len*.55,-len*.42, bx+s*len,-len*.66);
+      c.stroke();
+    }
   }
   c.restore();
-
-  /* ══ PASO 1 · la luz ══ */
+  /* los puntos de clorofila, que se encienden al recibir luz */
+  for(let i=0;i<30;i++){
+    const a=i*2.39996;
+    const px=Math.cos(a)*Wd*.86, py=Math.sin(a)*L*.78;
+    const lit=Math.max(0,Math.sin(t*1.5-i*.42));
+    c.save(); c.globalCompositeOperation='lighter';
+    glow(c,cx+px,cyL+py,20,'#7dffc0',.05+lit*.30);
+    c.restore();
+    c.fillStyle=rgba('#8dffc6',.20+lit*.55);
+    c.beginPath(); c.ellipse(cx+px,cyL+py,6.5,4.2,a,0,TAU); c.fill();
+  }
+  c.restore();
+  /* borde de la hoja iluminado */
   c.save();
-  c.globalAlpha=1-aNext;
-  for(let k=0;k<7;k++){
-    const ph=((t*.55)+k/7)%1;
-    const fx=cx+(k%2?1:-1)*(L*.18+ (k*.11)*L*.5);
-    const fy=cyL-L*1.02+ph*(L*1.9);
-    c.save(); c.globalCompositeOperation='lighter';
-    c.globalAlpha=(1-Math.abs(ph-.5)*1.3)*.85;
-    c.strokeStyle='#ffc44d'; c.lineWidth=2.2; c.lineCap='round';
-    c.beginPath(); c.moveTo(fx,fy-16); c.lineTo(fx+2,fy); c.stroke();
-    c.restore();
-  }
-  /* la clorofila se enciende donde llega la luz */
-  for(let k=0;k<16;k++){
-    const px=cx+((k%4)-1.5)*L*.24+Math.sin(k*2.1)*L*.06;
-    const py=cyL+(((k/4)|0)-1.5)*L*.24;
-    const li=.5+.5*Math.sin(t*2.2-k*.55);
-    c.save(); c.globalCompositeOperation='lighter';
-    glow(c,px,py,L*.14,'#ffc44d',.10+li*.34);
-    c.restore();
-    c.fillStyle=rgba('#7dffc0',.30+li*.42);
-    c.beginPath(); c.ellipse(px,py,L*.058,L*.038,k*.5,0,TAU); c.fill();
-  }
-  tag(c,'LUZ',cx+L*.44,cyL-L*.42,'#ffc44d',1);
+  leafShape(c,cx,cyL,L,Wd,rot);
+  c.strokeStyle='rgba(190,255,220,.42)'; c.lineWidth=2.2; c.stroke();
   c.restore();
 
-  /* ══ PASO 2 · el CO₂ entra por los estomas ══ */
-  c.save();
-  c.globalAlpha=1-aNext;
-  const sy=cyL+L*.72;
+  /* los fotones cayendo y el onda que levanta al tocar */
   for(let k=0;k<9;k++){
-    const ph=((t*.30)+k/9)%1;
-    const px=cx+Math.sin(k*1.7)*L*.42;
-    const py=sy+44-ph*52;
-    c.save();
-    c.globalAlpha=Math.sin(ph*Math.PI)*.9;
-    CO2m(c,px,py,6.4,t*.4+k,1);
+    const f=k/8;
+    const ix=cx+lerp(-L*.92,L*.86,f);
+    const iy=cyL+Math.sin(rot)*0+L*.60;
+    const ph=(t*.34+k*.11)%1;
+    const y=lerp(-h*.10,iy,ph);
+    c.save(); c.globalCompositeOperation='lighter';
+    c.globalAlpha=clamp(ph*4,0,1)*.9;
+    c.strokeStyle='#ffd98a'; c.lineWidth=2.4; c.lineCap='round';
+    c.beginPath(); c.moveTo(ix,y-30); c.lineTo(ix,y); c.stroke();
+    c.restore();
+    /* el impacto */
+    if(ph>.80){
+      const q=(ph-.80)/.20;
+      c.save(); c.globalCompositeOperation='lighter';
+      c.globalAlpha=(1-q)*.8;
+      c.strokeStyle='#ffd98a'; c.lineWidth=2*(1-q)+.4;
+      c.beginPath(); c.arc(ix,iy,q*64,0,TAU); c.stroke();
+      glow(c,ix,iy,44*(1-q*.5),'#ffd98a',.30*(1-q));
+      c.restore();
+    }
+  }
+  tag(c,'LUZ',cx+L*.66,cyL-L*.30,'#ffc44d',.9);
+  vignette(c,w,h,.55);
+}
+
+/* ══ ESCENA 2 · EL CO₂ ENTRA POR LOS ESTOMAS ══ */
+function escCO2(c,w,h,t,A,L){
+  wash(c,w,h,['#04141f','#031018','#02070c'],null);
+
+  /* el interior de la hoja, al fondo y desenfocado */
+  L.setTransform(1,0,0,1,0,0);
+  L.clearRect(0,0,L.canvas.width,L.canvas.height);
+  L.setTransform(.30,0,0,.30,0,0);
+  cellField(L,-40,h*.16,w+80,h*.70,11,5,3,'#2f8f7c',.34);
+  composite(c,L,w,h,5,.62);
+
+  /* epidermis superior, nítida */
+  cellField(c,-40,-h*.10,w+80,h*.34,11,3,3,'#6fe6c8',.62);
+  /* epidermis inferior, con el estoma en el centro */
+  const sy=h*.70;
+  cellField(c,-40,sy,w+80,h*.40,11,3,3,'#6fe6c8',.62);
+
+  const {cx}=area(w);
+  const op=.5+.5*Math.sin(t*1.5);
+  const pore=18+op*30;
+
+  /* el hueco del estoma, oscuro */
+  c.save();
+  c.fillStyle='rgba(1,6,10,.94)';
+  c.beginPath(); c.ellipse(cx,sy+6,pore*.82+16,20+op*10,0,0,TAU); c.fill();
+  c.restore();
+
+  /* las dos células guardián, curvándose al abrirse */
+  for(const s of [-1,1]){
+    const gx=cx+s*(pore+15);
+    c.save(); c.translate(gx,sy+6);
+    const gr=c.createLinearGradient(0,-26,0,26);
+    gr.addColorStop(0,'#8ff0d4'); gr.addColorStop(1,'#0d4a3a');
+    c.fillStyle=gr; c.strokeStyle='rgba(180,255,225,.55)'; c.lineWidth=1.8;
+    c.beginPath();
+    c.ellipse(0,0,15+op*7,26+op*9,s*op*.30,0,TAU);
+    c.fill(); c.stroke();
     c.restore();
   }
-  /* los dos estomas, abriéndose */
-  const op=.5+.5*Math.sin(t*1.15);
-  for(const s of [-1,1]){
-    const ex=cx+s*L*.30;
-    c.strokeStyle=rgba('#4ad9ff',.8); c.lineWidth=2.4;
-    c.beginPath();
-    c.ellipse(ex,sy,5+op*4,9+op*6,s*.30,0,TAU);
-    c.stroke();
-  }
-  c.strokeStyle='rgba(74,217,255,.35)'; c.lineWidth=1.2; c.setLineDash([3,4]);
-  c.beginPath(); c.moveTo(cx-L*.42,sy+40); c.lineTo(cx-L*.06,sy+8); c.stroke();
-  c.setLineDash([]);
-  tag(c,'ESTOMAS',cx-L*.46,sy+34,'#4ad9ff',.95);
-  c.restore();
+  /* luz que se cuela por el poro */
+  rays(c,cx,sy-6,Math.PI/2,.10,h*.62,'#4ad9ff',t,3,7);
 
-  /* ══ PASO 3 · dentro del cloroplasto ══ */
-  c.save();
-  c.globalAlpha=1-aNext;
-  const px=cx-L*.30, py=cyL-L*.16, pw=L*1.02, phh=L*.62;
-  c.fillStyle='rgba(169,123,255,.10)';
-  c.strokeStyle='rgba(169,123,255,.55)'; c.lineWidth=1.8;
-  rrect(c,px,py,pw,phh,14); c.fill(); c.stroke();
-  /* las membranas apiladas del interior */
-  for(let k=0;k<4;k++){
-    c.fillStyle='rgba(169,123,255,.26)';
-    rrect(c,px+10+k*4,py+8+k*3,pw-20-k*8,5,2.5); c.fill();
-  }
-  txt(c,'CLOROPLASTO',px+pw/2,py-13,10.5,'#a97bff',800,true);
-  /* el carbonillo: CO2 que llega y se une al trio */
-  const ccx=px+pw*.72, ccy=py+phh*.62;
-  const lp2=(t*.5)%1;
-  c.save();
-  c.globalAlpha=1-lp2;
-  CO2m(c,ccx+lerp(52,10,ease(lp2)),ccy,7,t*.5,1);
-  c.restore();
-  const sp2=L*.10;
-  c.strokeStyle='rgba(77,255,159,.45)'; c.lineWidth=2;
-  c.beginPath();
-  for(let k=0;k<3;k++){
-    const a=lp2*TAU+k*TAU/3;
-    const ax=ccx+Math.cos(a)*sp2, ay=ccy+Math.sin(a)*sp2;
-    k?c.lineTo(ax,ay):c.moveTo(ax,ay);
-  }
-  c.closePath(); c.stroke();
-  for(let k=0;k<3;k++){
-    const a=lp2*TAU+k*TAU/3;
-    C(c,ccx+Math.cos(a)*sp2,ccy+Math.sin(a)*sp2,6.4,1);
-  }
-  tag(c,'3-PGA',ccx,ccy+sp2+18,'#4dff9f',.95);
-  c.restore();
-
-  /* ══ PASO 4 · los azúcares para crecer ══ */
-  c.save();
-  c.globalAlpha=1-aNext;
-  for(let k=0;k<10;k++){
-    const ph=((t*.26)+k/10)%1;
-    const a=k*2.39996;
-    const x0=cx+Math.cos(a)*L*.24, y0=cyL+Math.sin(a)*L*.30;
-    const x=lerp(x0,cx+Math.cos(a)*L*1.5,ph);
-    const y=lerp(y0,cyL+Math.sin(a)*L*1.1-ph*h*.30,ph);
+  /* el CO₂ entrando con estela */
+  for(let k=0;k<11;k++){
+    const ph=((t*.46)+k/11)%1;
+    const off=Math.sin(k*2.4)*pore*.62;
+    const x=cx+off*(1-ph*.5), y=sy+52-ph*66;
     c.save();
     c.globalAlpha=Math.sin(ph*Math.PI)*.95;
-    ring(c,x,y,11.5,'#4dff9f',t*.3+k,.9);
+    for(let s=0;s<3;s++){
+      c.globalAlpha=Math.sin(ph*Math.PI)*(.55-s*.16);
+      CO2m(c,x,y+s*11,6.6-s*.5,t*.5+k+s,1);
+    }
     c.restore();
   }
-  /* el brote brotando abajo */
-  const gr=clamp((t*.5)%1,0,1);
-  const gx=cx, gy=cyL+L*1.28;
-  c.strokeStyle=rgba('#4dff9f',.85); c.lineWidth=3; c.lineCap='round';
+  /* el O₂ saliendo, más despacio y al revés */
+  for(let k=0;k<5;k++){
+    const ph=((t*.30)+k/5)%1;
+    const x=cx+Math.sin(k*3.1)*pore*1.5+ph*26;
+    const y=sy-10-ph*40;
+    c.save(); c.globalAlpha=Math.sin(ph*Math.PI)*.55;
+    O2(c,x,y,5.4,t*.5,1);
+    c.restore();
+  }
+  c.strokeStyle='rgba(74,217,255,.42)'; c.lineWidth=1.3; c.setLineDash([3,4]);
   c.beginPath();
-  c.moveTo(gx,gy); c.lineTo(gx,gy-26*ease(gr));
-  c.stroke();
-  c.beginPath();
-  c.ellipse(gx-11,gy-24*ease(gr)-3,10,5.4,-.5,0,TAU);
-  c.fillStyle=rgba('#4dff9f',.8); c.fill();
-  c.beginPath();
-  c.ellipse(gx+11,gy-24*ease(gr)-3,10,5.4,.5,0,TAU);
-  c.fillStyle=rgba('#4dff9f',.8); c.fill();
-  tag(c,'PARA CRECER',gx,gy+16,'#4dff9f',.95);
+  c.moveTo(cx-pore-46,sy+56); c.lineTo(cx-pore*.4,sy+14); c.stroke();
+  c.setLineDash([]);
+  tag(c,'ESTOMAS',cx-pore-48,sy+52,'#4ad9ff',.92);
+  vignette(c,w,h,.5);
+}
+
+/* ══ ESCENA 3 · EL CO₂ QUEDA FIJADO EN EL CLOROPLASTO ══ */
+function escCalvin(c,w,h,t,A,L){
+  wash(c,w,h,['#0a0722','#0c0a26','#04060d'],null);
+
+  /* grana apiladas al fondo, con paralaje y desenfoque */
+  L.setTransform(1,0,0,1,0,0);
+  L.clearRect(0,0,L.canvas.width,L.canvas.height);
+  L.setTransform(.34,0,0,.34,0,0);
+  for(let i=0;i<11;i++){
+    const sd=(((i*2654435761)>>>0)%97)/97;
+    const gx=w*(.06+sd*.94)+Math.sin(t*.10+i)*16;
+    const gy=h*(.12+((i*37)%80)/100);
+    L.save(); L.translate(gx,gy); L.rotate(-.22+i*.03);
+    for(let d=0;d<5;d++){
+      L.fillStyle='rgba(169,123,255,.20)';
+      rrect(L,-30,-24+d*11,60,6,3); L.fill();
+    }
+    L.restore();
+  }
+  composite(c,L,w,h,6,.85);
+
+  const A0=area(w), cx=A0.cx, cyR=h*.50;
+  const R=Math.min(w*.20,h*.27,240);
+
+  /* el anillo del ciclo */
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,cyR,R*1.5,'#a97bff',.14);
+  c.restore();
+  c.strokeStyle='rgba(169,123,255,.22)'; c.lineWidth=11;
+  c.beginPath(); c.arc(cx,cyR,R,0,TAU); c.stroke();
+  c.strokeStyle='rgba(169,123,255,.85)'; c.lineWidth=2.2;
+  c.setLineDash([6,10]); c.lineDashOffset=-t*22;
+  c.beginPath(); c.arc(cx,cyR,R,0,TAU); c.stroke();
+  c.setLineDash([]);
+
+  /* el pulso de energía dando la vuelta */
+  const pa=t*.55;
+  const pxp=cx+Math.cos(pa)*R, pyp=cyR+Math.sin(pa)*R;
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,pxp,pyp,54,'#ffffff',.42);
+  c.restore();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(pxp,pyp,4.6,0,TAU); c.fill();
+
+  /* el CO₂ llegando por la izquierda */
+  const inPh=(t*.42)%1;
+  c.save();
+  c.globalAlpha=clamp((1-inPh)*3,0,1);
+  CO2m(c,lerp(cx-R*1.55,cx-R*.86,ease(inPh)),cyR,13,t*.4,1);
   c.restore();
 
-  /* ── el número del paso, abajo a la izquierda ── */
+  /* los tres carbonos formándose en el anillo */
+  const a0=pa+2.1, sp=R*.30;
+  const P=[0,1,2].map(k=>{
+    const a=a0+k*TAU/3;
+    return [cx+Math.cos(a)*sp, cyR+Math.sin(a)*sp];
+  });
+  c.strokeStyle=rgba('#4dff9f',.40+.5*inPh); c.lineWidth=3;
+  c.beginPath();
+  for(let k=0;k<3;k++){ const q=P[(k+1)%3]; k?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); }
+  c.closePath(); c.stroke();
+  for(let k=0;k<3;k++) C(c,P[k][0],P[k][1],15,1);
+
+  /* el 3-PGA saliendo por la derecha */
+  const outPh=(t*.30+.5)%1;
   c.save();
-  c.globalAlpha=.9;
-  txt(c,`${i+1} / ${n}`,w*.075,h*.90,12.5,COL[i],800,true);
-  txt(c,STAGES[i].e,w*.16,h*.90,20,COL[i],800,true);
+  c.globalAlpha=clamp(outPh*3,0,1);
+  for(let k=0;k<3;k++)
+    C(c,lerp(cx+R*.9,cx+R*1.7,outPh),cyR-16+k*16,10,1);
   c.restore();
-}});
+  if(outPh>.5) tag(c,'3-PGA',lerp(cx+R*.9,cx+R*1.7,outPh),cyR+34,'#4dff9f',
+    clamp((outPh-.5)*4,0,1));
+
+  txt(c,'CLOROPLASTO',cx,cyR-R-30,12,'#a97bff',800,true);
+  tag(c,'CO₂',cx-R*1.42,cyR-40,'#4ad9ff',.9);
+  vignette(c,w,h,.55);
+}
+
+/* ══ ESCENA 4 · LOS AZÚCARES HACE QUE CREZCA ══ */
+function escAzucar(c,w,h,t,A){
+  const g=c.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#0b1418'); g.addColorStop(.46,'#1d1a10');
+  g.addColorStop(.80,'#2e2008'); g.addColorStop(1,'#0a0805');
+  c.fillStyle=g; c.fillRect(0,0,w,h);
+  /* el sol bajo, en el horizonte */
+  const sx=w*.72, sy=h*.72;
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,sx,sy,h*.55,'#ffc44d',.16);
+  c.restore();
+  rays(c,sx,sy,-Math.PI/2,.52,h*1.5,'#ffd27a',t,9,3);
+  motes(c,w,h,t,Math.round(w/22)*CAP,['#ffd27a','#9ff0d0'],.7);
+
+  /* el suelo */
+  const gy=h*.80;
+  c.save();
+  c.fillStyle='rgba(12,10,6,.9)';
+  c.beginPath();
+  c.moveTo(0,gy+6);
+  for(let x=0;x<=w;x+=26) c.lineTo(x,gy+6+Math.sin(x*.021)*7+Math.sin(x*.07)*3);
+  c.lineTo(w,h); c.lineTo(0,h); c.closePath(); c.fill();
+  c.restore();
+
+  /* la plántula creciendo, en bucle */
+  const {cx}=area(w);
+  const gr=clamp((t*.34)%1,0,1);
+  const grow=ease(clamp(gr*1.15,0,1));
+  const stem=150*grow;
+  c.save(); c.globalCompositeOperation='lighter';
+  glow(c,cx,gy-stem*.5,90*grow,'#4dff9f',.16*grow);
+  c.restore();
+  /* la raíz */
+  c.strokeStyle=rgba('#c9a25e',.75); c.lineWidth=2.2; c.lineCap='round';
+  c.beginPath();
+  c.moveTo(cx,gy+4);
+  c.quadraticCurveTo(cx+Math.sin(t*.6)*14,gy+44*grow,cx-6,gy+86*grow);
+  c.stroke();
+  for(const s of [-1,1]){
+    c.beginPath();
+    c.moveTo(cx,gy+26*grow);
+    c.quadraticCurveTo(cx+s*26*grow,gy+44*grow,cx+s*38*grow,gy+64*grow);
+    c.stroke();
+  }
+  /* el tallo */
+  c.strokeStyle=rgba('#7dffc0',.95); c.lineWidth=4.4;
+  c.beginPath();
+  c.moveTo(cx,gy+4); c.lineTo(cx,gy-stem);
+  c.stroke();
+  c.lineCap='butt';
+  /* las dos hojas abriéndose */
+  for(const s of [-1,1]){
+    const o=ease(clamp((gr-.28)/.5,0,1))*s;
+    c.save(); c.translate(cx,gy-stem*.62); c.rotate(o*.62);
+    const lg=c.createLinearGradient(0,-14,0,14);
+    lg.addColorStop(0,'#8dffc6'); lg.addColorStop(1,'#0d5c40');
+    c.fillStyle=lg;
+    c.beginPath();
+    c.moveTo(0,0);
+    c.bezierCurveTo(s*34,-26, s*74,-16, s*86,0);
+    c.bezierCurveTo(s*74,16, s*34,26, 0,0);
+    c.fill();
+    c.strokeStyle='rgba(190,255,220,.5)'; c.lineWidth=1.3; c.stroke();
+    c.restore();
+  }
+  /* los azúcares llegando a la planta */
+  for(let k=0;k<12;k++){
+    const ph=((t*.26)+k/12)%1;
+    const a=k*2.39996;
+    const x0=cx+Math.cos(a)*w*.30, y0=gy+Math.sin(a)*h*.16+18;
+    const x1=cx, y1=gy-stem*.5;
+    const x=lerp(x0,x1,ease(ph));
+    const y=lerp(y0,y1,ease(ph))-Math.sin(ph*Math.PI)*46;
+    c.save();
+    c.globalAlpha=Math.sin(ph*Math.PI)*.92;
+    ring(c,x,y,13,'#ffc44d',t*.4+k,.95);
+    c.restore();
+  }
+  tag(c,'PARA CRECER',cx,gy+112,'#4dff9f',.9);
+  vignette(c,w,h,.5);
+}
+
+/* ══ el motor: una escena, un fundido, un barrido de luz ══ */
+let bgL=null;
+scene($('#cv2'),{fps:LOW?30:60,dpr:DPR,gate:['s2'],bloom:true,
+  resize(w,h){
+    this.W=w; this.H=h;
+    this.lay=layer(w,h,.30);
+  },
+  draw(c,w,h,t){
+    if(!this.lay) this.lay=layer(w,h,.30);
+    const n=STAGES.length;
+    const i=clamp(FLOW.i,0,n-1), lp=clamp(FLOW.p*n-i,0,1);
+    const f=clamp((lp-.82)/.18,0,1);
+    const S=[escLuz,escCO2,escCalvin,escAzucar];
+
+    c.save();
+    S[i](c,w,h,t,1-f,this.lay);
+    if(f>0&&i+1<n) S[i+1](c,w,h,t,f,this.lay);
+    c.restore();
+
+    /* el barrido de luz en el cambio de paso */
+    if(f>0&&f<1){
+      const x=lerp(-w*.35,w*1.35,f);
+      c.save();
+      c.globalCompositeOperation='lighter';
+      const g=c.createLinearGradient(x-w*.22,0,x+w*.22,0);
+      g.addColorStop(0,'rgba(255,255,255,0)');
+      g.addColorStop(.5,'rgba(255,255,255,.10)');
+      g.addColorStop(1,'rgba(255,255,255,0)');
+      c.fillStyle=g;
+      c.beginPath();
+      c.moveTo(x-w*.22,0); c.lineTo(x+w*.22,0);
+      c.lineTo(x+w*.42,h); c.lineTo(x-w*.02,h);
+      c.closePath(); c.fill();
+      c.restore();
+    }
+  }});
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1517,11 +1804,19 @@ function onScroll(){
   queued=true;
   requestAnimationFrame(()=>{
     queued=false;
-    /* sección activa: la más centrada */
-    let best=SECTIONS[0],bd=1e9;
+    /* sección activa: una sección fijada manda mientras cubre el viewport;
+       si no hay ninguna, la más cercana al punto de lectura */
+    let best=null;
     for(const s of SECTIONS){
-      const d=Math.abs(s.getBoundingClientRect().top+innerHeight*.3);
-      if(d<bd){bd=d;best=s;}
+      const r=s.getBoundingClientRect();
+      if(r.top<=1 && r.bottom>=innerHeight-1){ best=s; break; }
+    }
+    if(!best){
+      let bd=1e9;
+      for(const s of SECTIONS){
+        const d=Math.abs(s.getBoundingClientRect().top+innerHeight*.3);
+        if(d<bd){bd=d;best=s;}
+      }
     }
     if(best.id!==curSec){
       curSec=best.id; Phase.cur=best.id;
