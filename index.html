@@ -180,35 +180,15 @@ h3{font-size:clamp(17px,2vw,23px);font-weight:750;line-height:1.18;
 
 /* ═══════════════════════════════════════════════════════════════
    EL VÍDEO DE ENTRADA
+   ocupa toda la pantalla, sin botones ni barra: solo el vídeo
    ═══════════════════════════════════════════════════════════════ */
 html.vid{overflow:hidden}
 #intro{position:fixed;inset:0;z-index:400;background:#000;overflow:hidden;
   opacity:0;transition:opacity .85s ease}
 #intro.on{opacity:1}
 #intro.fuera{opacity:0;pointer-events:none}
-#intro .vb,#intro .vf{position:absolute;inset:0;width:100%;height:100%;
-  margin:0;display:block}
-#intro .vb{object-fit:cover;transform:scale(1.28);
-  filter:blur(46px) saturate(1.5) brightness(.5);opacity:.85;pointer-events:none}
-#intro .vf{object-fit:contain;background:#000}
-#intro .vinner{position:absolute;inset:auto 0 0 0;z-index:3;
-  display:grid;gap:16px;justify-items:center;padding:0 20px 34px;
-  padding-bottom:max(34px,env(safe-area-inset-bottom));text-align:center;
-  background:linear-gradient(180deg,transparent,rgba(0,0,0,.72))}
-#intro .vtit{margin:0;min-height:1.2em;font:700 12px/1.4 var(--mono);
-  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5)}
-#intro .vbot{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-#intro .vbtn{font:700 12px/1 var(--sans);letter-spacing:.02em;color:#08221a;
-  padding:11px 17px;border-radius:999px;border:1px solid transparent;
-  background:#4dff9f;cursor:pointer}
-#intro .vbtn:focus-visible{outline:3px solid #fff;outline-offset:2px}
-#intro .vbtn.ghost{background:rgba(255,255,255,.10);color:#fff;
-  border-color:rgba(255,255,255,.28);backdrop-filter:blur(6px)}
-#intro .vbtn.ghost:hover{background:rgba(255,255,255,.2)}
-#intro .prog{position:absolute;left:0;right:0;top:0;height:3px;z-index:4;
-  background:rgba(255,255,255,.10)}
-#intro .prog i{display:block;height:100%;width:0;background:#4dff9f;
-  transition:width .1s linear}
+#intro video{position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;object-position:center}
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -524,18 +504,8 @@ footer b{color:var(--mut)}
 
 <!-- ═══════════ EL VÍDEO DE ENTRADA ═══════════ -->
 <div id="intro">
-  <video id="introBg" class="vb" muted playsinline preload="none" aria-hidden="true"></video>
-  <video id="introVid" class="vf" muted playsinline preload="auto"
-    poster="poster.jpg" aria-label="Vídeo de entrada"></video>
-  <div class="vinner">
-    <p class="vtit" id="introMsg"></p>
-    <div class="vbot">
-      <button type="button" id="introPlay" class="vbtn play" hidden>▶ Reproducir</button>
-      <button type="button" id="introSnd" class="vbtn" hidden>🔇 Activar sonido</button>
-      <button type="button" id="introSkip" class="vbtn ghost">Saltar ⏭</button>
-    </div>
-  </div>
-  <div class="prog" aria-hidden="true"><i id="introBar"></i></div>
+  <video id="introVid" muted playsinline preload="auto" poster="poster.jpg"
+    aria-label="Vídeo de entrada"></video>
 </div>
 
 <main>
@@ -2994,13 +2964,11 @@ addEventListener('scroll',()=>{
 
 /* ═══════════════════════════════════════════════════════════════
    EL VÍDEO DE ENTRADA
-   arranca solo y en silencio, se puede activar el sonido o saltarlo,
-   y al terminar se desvanece para dejar la portada
+   ocupa la pantalla entera, sin botones ni barra. Suena solo si el
+   navegador lo deja, y al terminar se desvanece para la portada
    ═══════════════════════════════════════════════════════════════ */
 (function(){
-  const box=$('#intro'), vid=$('#introVid'), bg=$('#introBg');
-  const bplay=$('#introPlay'), bsnd=$('#introSnd'), bskip=$('#introSkip');
-  const msg=$('#introMsg'), barra=$('#introBar');
+  const box=$('#intro'), vid=$('#introVid');
   if(!box||!vid) return;
   const SRC='video.mp4', POSTER='poster.jpg';
   let fuera=false, arrancado=false, socorro=0;
@@ -3011,62 +2979,36 @@ addEventListener('scroll',()=>{
     clearTimeout(socorro);
     box.classList.add('fuera');
     document.documentElement.classList.remove('vid');
-    try{ vid.pause(); bg.pause(); }catch(e){}
+    try{ vid.pause(); }catch(e){}
     setTimeout(()=>{ if(box.parentNode) box.remove(); },900);
   }
+
+  /* quien pide menos movimiento no ve el vídeo: entra directo en la portada */
+  if(RM){ box.remove(); return; }
+
+  document.documentElement.classList.add('vid');
+  vid.addEventListener('ended',terminar);
+  vid.addEventListener('error',terminar);
+  vid.src=SRC;
+  vid.poster=POSTER;
+  box.classList.add('on');
 
   function arrancar(){
     if(arrancado) return;
     arrancado=true;
-    bplay.hidden=true;
-    msg.textContent='';
-    if(!vid.getAttribute('src')) vid.src=SRC;   /* quien solo quiera la imagen no descarga */
-    /* el vídeo es vertical y la página horizontal: se copia detrás, grande
-       y borrosa, para que no queden bandas negras a los lados. Si algún día
-       el vídeo fuese apaisado, esta copia queda tapada y no se ve. */
-    bg.src=SRC;
-    const q=bg.play(); if(q&&q.catch) q.catch(()=>{});
-    const p=vid.play();
-    if(p&&p.catch) p.catch(()=>{ bplay.hidden=false; });
-  }
-
-  vid.addEventListener('loadedmetadata',()=>{
     vid.muted=true; vid.setAttribute('muted','');
-    if(!RM) arrancar();
-  });
-  vid.addEventListener('canplay',()=>{ if(!RM) arrancar(); });
-  vid.addEventListener('error',terminar);
-  vid.addEventListener('ended',terminar);
-  vid.addEventListener('timeupdate',()=>{
-    if(!barra||!vid.duration) return;
-    barra.style.width=clamp(vid.currentTime/vid.duration,0,1)*100+'%';
-  });
-  vid.addEventListener('playing',()=>{ bsnd.hidden=false; });
+    const p=vid.play();
+    /* si el navegador no deja reproducir solo, la portada entra de inmediato */
+    if(p&&p.catch) p.catch(terminar);
+  }
+  vid.addEventListener('loadedmetadata',arrancar);
+  vid.addEventListener('canplay',arrancar);
+  socorro=setTimeout(()=>{ if(!arrancado&&!fuera) terminar(); }, 7000);
 
-  bplay.addEventListener('click',arrancar);
-  bskip.addEventListener('click',terminar);
-  bsnd.addEventListener('click',()=>{
-    vid.muted=!vid.muted;
-    bsnd.textContent=vid.muted?'🔇 Activar sonido':'🔊 Sonido activado';
-    if(!vid.muted) vid.play().catch(()=>{});
-  });
+  /* el teclado siempre tiene salida; no es un botón, es la vía de escape */
   addEventListener('keydown',e=>{
     if(!fuera&&(e.key==='Escape'||e.key===' ')){ e.preventDefault(); terminar(); }
   });
-
-  /* si el vídeo no arranca, no se queda la página en negro */
-  document.documentElement.classList.add('vid');
-  vid.poster=POSTER;
-  box.classList.add('on');
-  if(RM){
-    /* con menos movimiento no se reproduce solo: se ve el primer fotograma
-       y quien quiera lo lanza. Así tampoco se descarga el vídeo sin pedirlo. */
-    msg.textContent='Vídeo de entrada';
-    bplay.hidden=false;
-  }else{
-    vid.src=SRC;
-    socorro=setTimeout(()=>{ if(!arrancado&&!fuera) terminar(); }, 7000);
-  }
 })();
 
 kick();
